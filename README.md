@@ -1,5 +1,5 @@
-# Hello World Example
+# Car Basic ESP32
 
-Starts a FreeRTOS task to print "Hello World"
+### A small test project to explore some concepts in AI and SLAM.
 
-See the README.md file in the upper level 'examples' directory for more information about examples.
+##### My only purpose at the moment is to come up with a more concrete plan and idea for my undergraduate final year project

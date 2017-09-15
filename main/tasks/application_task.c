@@ -17,6 +17,7 @@ void application_task(void* p) {
 	// Task Loop
 	for(;;) {
 		vTaskDelay(2000/portTICK_PERIOD_MS);
-		printf("Hey Baby!\n");
+		printf(".");
+		fflush(stdout);
 	}
 }

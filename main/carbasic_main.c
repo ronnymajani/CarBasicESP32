@@ -7,7 +7,8 @@
 
 /* Application Includes */
 #include "wifi.h"
-#include "tasks/application_task.h"
+#include "tasks/include/application_task.h"
+#include "tasks/include/tcp_server.h"
 
 /* Macro Definitions */
 #define STACK_SIZE configMINIMAL_STACK_SIZE
@@ -43,18 +44,40 @@ static void setLogLevels() {
 static void createTasks() {
 	BaseType_t retCode;
 
+	/* Application Task */
 	ESP_LOGV(TAG, "Creating Application Task");
 	retCode = (xTaskCreate(&application_task, "APP", STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL));
 
 	if(retCode != pdPASS) {
 		ESP_LOGE(TAG, "Failed to create Application Task");
-		abort();
+		for(;;);
 	}
+
+	/* Web Socket Task */
+	ESP_LOGV(TAG, "Creating TCP Server Task");
+	retCode = (xTaskCreate(&tcp_server_task, "TCP_Server", 3000, NULL, tskIDLE_PRIORITY, NULL));
+
+	if(retCode != pdPASS) {
+		ESP_LOGE(TAG, "Failed to create TCP Server Task");
+		for(;;);
+	}
+
+	/* Web Socket Task */
+	ESP_LOGV(TAG, "Creating TCP Listener Task");
+	retCode = (xTaskCreate(&tcp_listener_task, "TCP_Listener", 3000, NULL, tskIDLE_PRIORITY, NULL));
+
+	if(retCode != pdPASS) {
+		ESP_LOGE(TAG, "Failed to create TCP Listener Task");
+		for(;;);
+	}
+
+	//TODO: Adjust the priorities of the Tasks
+
 }
 
 
 
 static void setup() {
 	ESP_LOGV(TAG, "Starting Setup Function");
-	wifi_init_softap();
+	wifi_init_sta();
 }

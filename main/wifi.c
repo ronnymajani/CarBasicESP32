@@ -31,6 +31,17 @@ static esp_err_t event_handler(void* ctx, system_event_t* event) {
 	                 MAC2STR(event->event_info.sta_disconnected.mac),
 	                 event->event_info.sta_disconnected.aid);
 	        break;
+	    case SYSTEM_EVENT_STA_CONNECTED:
+	    	ESP_LOGI(TAG, "connected to desired AP");
+	    	break;
+	    case SYSTEM_EVENT_STA_DISCONNECTED:
+	    	ESP_LOGI(TAG, "disconnected from desired AP");
+	    	break;
+	    case SYSTEM_EVENT_STA_GOT_IP: {
+	    	ip4_addr_t ip = event->event_info.got_ip.ip_info.ip;
+	    	ESP_LOGI(TAG, "got IP: "IPSTR, IP2STR(&ip));
+	    	break;
+	    }
 	    default:
 	        break;
 	}
@@ -39,9 +50,32 @@ static esp_err_t event_handler(void* ctx, system_event_t* event) {
 }
 
 
+
+void wifi_init_sta() {
+	tcpip_adapter_init();
+	ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+	ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+	esp_wifi_set_country(WIFI_COUNTRY_EU);
+	ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+	wifi_config_t sta_config = {
+		.sta = {
+			.ssid = WIFI_TEST_STA_SSID,
+			.password = WIFI_TEST_STA_PASS,
+			.bssid_set = false
+		}
+	};
+	ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &sta_config) );
+	ESP_ERROR_CHECK( esp_wifi_start() );
+	ESP_ERROR_CHECK( esp_wifi_connect() );
+}
+
+
+
 void wifi_init_softap()
 {
     tcpip_adapter_init();
+
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -60,6 +94,8 @@ void wifi_init_softap()
     if (strlen(WIFI_PASS) == 0) {
         wifi_config.ap.authmode = WIFI_AUTH_OPEN;
     }
+
+    esp_wifi_set_country(WIFI_COUNTRY_EU);
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));

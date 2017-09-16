@@ -35,7 +35,8 @@ static esp_err_t event_handler(void* ctx, system_event_t* event) {
 	    	ESP_LOGI(TAG, "connected to desired AP");
 	    	break;
 	    case SYSTEM_EVENT_STA_DISCONNECTED:
-	    	ESP_LOGI(TAG, "disconnected from desired AP");
+	    	ESP_LOGI(TAG, "disconnected from desired AP. Trying again...");
+	    	esp_wifi_connect();
 	    	break;
 	    case SYSTEM_EVENT_STA_GOT_IP: {
 	    	ip4_addr_t ip = event->event_info.got_ip.ip_info.ip;

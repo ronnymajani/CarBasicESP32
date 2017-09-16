@@ -6,12 +6,11 @@
 #include "esp_spi_flash.h"
 
 /* Application Includes */
+#include "carbasic_main.h"
 #include "wifi.h"
 #include "tasks/include/application_task.h"
 #include "tasks/include/tcp_server.h"
 
-/* Macro Definitions */
-#define STACK_SIZE configMINIMAL_STACK_SIZE
 
 /* Static Definitions */
 static const char* TAG = "MAIN";
@@ -46,7 +45,7 @@ static void createTasks() {
 
 	/* Application Task */
 	ESP_LOGV(TAG, "Creating Application Task");
-	retCode = (xTaskCreate(&application_task, "APP", STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL));
+	retCode = (xTaskCreate(&application_task, TASK_APP_NAME, TASK_APP_STACK_SIZE, NULL, TASK_APP_PRIORITY, NULL));
 
 	if(retCode != pdPASS) {
 		ESP_LOGE(TAG, "Failed to create Application Task");
@@ -55,7 +54,7 @@ static void createTasks() {
 
 	/* TCP Server Task */
 	ESP_LOGV(TAG, "Creating TCP Server Task");
-	retCode = (xTaskCreate(&tcp_server_task, "TCP_Server", 3000, NULL, 2, NULL));
+	retCode = (xTaskCreate(&tcp_server_task, TASK_TCP_SERVER_NAME, TASK_TCP_SERVER_STACK_SIZE, NULL, TASK_TCP_SERVER_PRIORITY, NULL));
 
 	if(retCode != pdPASS) {
 		ESP_LOGE(TAG, "Failed to create TCP Server Task");
@@ -64,15 +63,12 @@ static void createTasks() {
 
 	/* TCP Listener Task */
 	ESP_LOGV(TAG, "Creating TCP Listener Task");
-	retCode = (xTaskCreate(&tcp_listener_task, "TCP_Listener", 3000, NULL, 3, NULL));
+	retCode = (xTaskCreate(&tcp_listener_task, TASK_TCP_LISTENER_NAME, TASK_TCP_LISTENER_STACK_SIZE, NULL, TASK_TCP_LISTENER_PRIORITY, NULL));
 
 	if(retCode != pdPASS) {
 		ESP_LOGE(TAG, "Failed to create TCP Listener Task");
 		for(;;);
 	}
-
-	//TODO: Adjust the priorities of the Tasks
-
 }
 
 

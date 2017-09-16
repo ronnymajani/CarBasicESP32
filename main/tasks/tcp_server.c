@@ -19,6 +19,7 @@ static void initialize_connections();
 static void add_connection(int);
 static void remove_connection(int);
 static void get_connections_fdset(fd_set*);
+static int get_max_socket_number();
 
 /* Global Variables */
 static const char* TAG = "TCP Server";
@@ -44,10 +45,12 @@ void tcp_server_task(void* pvParameters) {
 
 	while(1) {
 		fd_set readfds;
+		int paramN;
 		int retCode;
 
 		get_connections_fdset(&readfds);
-		retCode = select(connections.numberOfConnections+1, &readfds, NULL, NULL, &timeout);
+		paramN = get_max_socket_number() + 1;
+		retCode = select(paramN, &readfds, NULL, NULL, &timeout);
 
 		if(retCode == -1) { // error
 			ESP_EARLY_LOGE(TAG, "Error during function SELECT (TCP Socket Programming)");
@@ -229,4 +232,14 @@ static void get_connections_fdset(fd_set* connections_fds) {
 //		ESP_EARLY_LOGV(TAG, "setting socket [%d] in FDS", connections.sockets[i]);
 		FD_SET(connections.sockets[i], connections_fds);
 	}
+}
+
+
+
+/**
+ * Returns the largest socket number
+ * Which is the number of the last socket added to our list
+ */
+static int get_max_socket_number() {
+	return connections.sockets[connections.numberOfConnections];
 }

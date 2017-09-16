@@ -1,0 +1,25 @@
+/*
+ * carbasic_main.h
+ *
+ *  Created on: Sep 16, 2017
+ *      Author: ronnymajani
+ */
+
+#ifndef MAIN_TASKS_INCLUDE_CARBASIC_MAIN_H_
+#define MAIN_TASKS_INCLUDE_CARBASIC_MAIN_H_
+
+
+#define TASK_APP_NAME "APP"
+#define TASK_APP_PRIORITY tskIDLE_PRIORITY
+#define TASK_APP_STACK_SIZE configMINIMAL_STACK_SIZE
+
+#define TASK_TCP_SERVER_NAME "TCP_Server"
+#define TASK_TCP_SERVER_PRIORITY 2
+#define TASK_TCP_SERVER_STACK_SIZE 2048
+
+#define TASK_TCP_LISTENER_NAME "TCP_Listener"
+#define TASK_TCP_LISTENER_PRIORITY 3
+#define TASK_TCP_LISTENER_STACK_SIZE 2048
+
+
+#endif /* MAIN_TASKS_INCLUDE_CARBASIC_MAIN_H_ */

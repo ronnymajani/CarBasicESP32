@@ -241,5 +241,9 @@ static void get_connections_fdset(fd_set* connections_fds) {
  * Which is the number of the last socket added to our list
  */
 static int get_max_socket_number() {
-	return connections.sockets[connections.numberOfConnections];
+	if(connections.numberOfConnections == 0 || connections.sockets == NULL) {
+		return 0;
+	} else {
+		return connections.sockets[connections.numberOfConnections-1];
+	}
 }

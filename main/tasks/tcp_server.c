@@ -7,12 +7,14 @@
 
 #include "esp_log.h"
 #include "lwip/sockets.h"
+#include "tcpip_adapter.h"
+#include "string.h"
 
 #include "tcp_server.h"
 
 
 /* Static Function Prototypes */
-static int espx_last_socket_errno(int);
+//static int espx_last_socket_errno(int);
 static void initialize_connections();
 static void add_connection(int);
 static void remove_connection(int);
@@ -37,7 +39,7 @@ void tcp_server_task(void* pvParameters) {
 	ESP_EARLY_LOGV(TAG, "Task Started");
 
 	struct timeval timeout;
-	timeout.tv_sec = 10;
+	timeout.tv_sec = 5;
 	timeout.tv_usec = 0;
 
 	while(1) {
@@ -45,25 +47,36 @@ void tcp_server_task(void* pvParameters) {
 		int retCode;
 
 		get_connections_fdset(&readfds);
-		retCode = select(connections.numberOfConnections, &readfds, NULL, NULL, &timeout);
+		retCode = select(connections.numberOfConnections+1, &readfds, NULL, NULL, &timeout);
 
 		if(retCode == -1) { // error
 			ESP_EARLY_LOGE(TAG, "Error during function SELECT (TCP Socket Programming)");
 			abort();
-		} else if(retCode > 0) { // >0 means that at least 1 socket is ready to be read
+		}
+		else if(retCode == 0) {
+//			ESP_EARLY_LOGV(TAG, "Select timed out");
+		}
+		else if(retCode > 0) { // >0 means that at least 1 socket is ready to be read
+			ESP_EARLY_LOGV(TAG, "Select function returned");
 			for(int i = 0; i < connections.numberOfConnections; i++) {
 				int sock = connections.sockets[i];
 				if(FD_ISSET(sock, &readfds)) { // current socket is ready for reading
 					//TODO: do something here?
 					char buff[10];
 					int retVal = recv(sock, buff, sizeof(char) * 10, 0);
+					ESP_EARLY_LOGV(TAG, "Received data from socket: %d");
 					if(retVal == -1) {
 						ESP_EARLY_LOGE(TAG, "Error during function RECV (TCP Socket Programming)");
 						abort();
 					} else if(retVal == 0) {
+						ESP_EARLY_LOGI(TAG, "Client Socket [%d] disconnected. Removing...", sock);
 						remove_connection(sock);
 					} else {
-						printf("Received Command: %s", buff);
+						char* msg = malloc(retVal+1);
+						memcpy(msg, buff, retVal);
+						msg[retVal] = '\0';
+						ESP_EARLY_LOGV(TAG, "Received data = %s", msg);
+						free(msg);
 					}
 				}
 			}
@@ -106,13 +119,18 @@ void tcp_listener_task(void* pvParameters) {
 	}
 
 	while(1) {
-		struct sockaddr clientAddress;
+		struct sockaddr_in clientAddress;
 		socklen_t clientAddressLength = sizeof(clientAddress);
+		ESP_EARLY_LOGV(TAG, "Accepting new connections");
 		int clientSock = accept(sock, (struct sockaddr*)&clientAddress, &clientAddressLength);
 		if(clientSock == -1) {
 			ESP_EARLY_LOGE(TAG, "Failed to Accept incoming connection");
 			abort();
 		}
+		ESP_EARLY_LOGI(TAG, "New Client Connected, socket:%d, ip:%s, port:%d",
+				clientSock,
+				ip4addr_ntoa((ip4_addr_t*)&(clientAddress.sin_addr.s_addr)),
+				clientAddress.sin_port);
 		add_connection(clientSock);
 	}
 }
@@ -123,12 +141,14 @@ void tcp_listener_task(void* pvParameters) {
  * Returns the most recent error code related to the given socket
  * (taken from the "Kolban ESP32" book)
  */
+/*
 static int espx_last_socket_errno(int socket) {
 	int ret = 0;
 	u32_t optlen = sizeof(ret);
 	getsockopt(socket, SOL_SOCKET, SO_ERROR, &ret, &optlen);
 	return ret;
 }
+*/
 
 
 /**
@@ -186,10 +206,15 @@ static void remove_connection(int sock) {
 		}
 		// shrink size of list
 		connections.numberOfConnections--;
-		connections.sockets = realloc(connections.sockets, sizeof(int) * connections.numberOfConnections);
-		if(connections.sockets == NULL) {
-			ESP_EARLY_LOGE(TAG, "Failed to re-allocate less memory for connections.sockets list");
-			abort();
+		if(connections.numberOfConnections > 0) {
+			connections.sockets = realloc(connections.sockets, sizeof(int) * connections.numberOfConnections);
+			if(connections.sockets == NULL) {
+				ESP_EARLY_LOGE(TAG, "Failed to re-allocate less memory for connections.sockets list");
+				abort();
+			}
+		} else {
+			free(connections.sockets);
+			connections.sockets = NULL;
 		}
 	}
 }
@@ -201,6 +226,7 @@ static void get_connections_fdset(fd_set* connections_fds) {
 	FD_ZERO(connections_fds);
 
 	for(int i = 0; i < connections.numberOfConnections; i++) {
+//		ESP_EARLY_LOGV(TAG, "setting socket [%d] in FDS", connections.sockets[i]);
 		FD_SET(connections.sockets[i], connections_fds);
 	}
 }

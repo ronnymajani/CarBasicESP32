@@ -17,14 +17,10 @@ class CarBasicNetworkManager(object):
         self.senderTask.send_message(message)
 
     def get_message(self):
-        if self.receiverTask is not None:
-            return self.receiverTask.messageQueue.get()
+        return self.receiverTask.messageQueue.get()
 
     def data_available(self):
-        if self.receiverTask is not None:
-            return not self.receiverTask.messageQueue.empty()
-        else:
-            return False
+        return not self.receiverTask.messageQueue.empty()
 
     def start(self, timeout=10):
         """Attempts to connect to this object attached IP and PORT then initializes the Receiver and Sender Tasks
@@ -51,7 +47,11 @@ class CarBasicNetworkManager(object):
         self.receiverTask.stop()
         self.senderTask.stop()
         self.socket.close()
+        self.receiverTask.socket.close()
+        self.senderTask.socket.close()
         self.socket = None
+        del self.receiverTask
+        del self.senderTask
         self.receiverTask = _TCPReceiverTask()
         self.senderTask = _TCPSenderTask()
 
@@ -78,6 +78,7 @@ class _TCPReceiverTask(threading.Thread):
         self.running = False
 
     def run(self):
+        logger = logging.getLogger(__name__)
         buff = ""
         while self.running:
             buff += self.socket.recv(1024)
@@ -86,10 +87,10 @@ class _TCPReceiverTask(threading.Thread):
                 tag_start_index = buff.find(CarBasicProtocol.TCP_TAG_START)
                 if tag_start_index != -1:
                     data = buff[tag_start_index:tag_end_index+1]
+                    logger.debug("Received the following data:\n%s", data)
                     self.messageQueue.put(data)
                 else:
-                    logger = logging.getLogger(__name__)
-                    logger.error("Junk message received; Discarding...", buff[:tag_end_index])
+                    logger.error("Junk message received:\n%s\nDiscarding...", buff[:tag_end_index+1])
                 # Clear the part of the string we just processed
                 if len(buff) > tag_end_index + 1:
                     buff = buff[tag_end_index + 1:]

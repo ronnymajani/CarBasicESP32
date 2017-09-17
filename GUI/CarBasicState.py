@@ -51,12 +51,29 @@ class CarBasicState:
     # Setters (forcing the use of setters ensures thread safety)
     def set_state(self, x, y, orientation, sensor_reading, sensor_orientation, speed, pwm_left, pwm_right):
         self.lock()
-        self.__x = x
-        self.__y = y
-        self.__orientation = orientation
-        self.__sensorReading = sensor_reading
-        self.__sensorOrientation = sensor_orientation
-        self.__speed = speed
-        self.__pwmLeft = pwm_left
-        self.__pwmRight = pwm_right
+
+        if x is not None:
+            self.__x = x
+
+        if y is not None:
+            self.__y = y
+
+        if orientation is not None:
+            self.__orientation = orientation
+
+        if sensor_reading is not None:
+            self.__sensorReading = sensor_reading
+
+        if sensor_orientation is not None:
+            self.__sensorOrientation = sensor_orientation
+
+        if speed is not None:
+            self.__speed = speed
+
+        if pwm_left is not None:
+            self.__pwmLeft = pwm_left
+
+        if pwm_right is not None:
+            self.__pwmRight = pwm_right
+
         self.unlock()

@@ -1,6 +1,7 @@
 import sys, time
 from PyQt4 import QtCore, QtGui, uic
 import logging
+import threading
 from PanelMap import PanelMap
 from CarBasic import CarBasic
 
@@ -11,6 +12,17 @@ logging.basicConfig(level=logging.DEBUG)
 qtCreatorFile = "host_panel.ui"
 
 UI_MainWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
+
+
+class UpdatePanel(threading.Thread):
+    def __init__(self, host_panel):
+        threading.Thread.__init__(self)
+        self.setName("Host Panel force update thread")
+        self.hostPanel = host_panel
+
+    def run(self):
+        while True:
+            self.hostPanel.repaint()
 
 
 class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
@@ -24,6 +36,8 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         self.logger = logging.getLogger(__name__)
 
         self.register_buttons()
+        self.updater = UpdatePanel(self)
+        self.updater.start()
 
     def register_buttons(self):
         """Register the callback functions for the GUI buttons"""
@@ -111,18 +125,23 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         ip = self.controls_settings_ip_value.text()
         port = self.controls_settings_port_value.value()
         timeout = self.controls_settings_timeout_value.value()
+
         self.controls_settings_ip_value.setEnabled(False)
         self.controls_settings_port_value.setEnabled(False)
         self.controls_settings_timeout_value.setEnabled(False)
+        self.controls_settings_button_connect.setEnabled(False)
         self.connection_status_label.setText("Connecting...")
+
         if self.car.controller.connect(ip, port, timeout=timeout):
             self.connection_status_label.setEnabled(True)
+            self.controls_settings_button_disconnect.setEnabled(True)
             self.controls_widget.setCurrentIndex(0)
             self.connection_status_label.setText("Connected!")
         else:
             self.controls_settings_ip_value.setEnabled(True)
             self.controls_settings_port_value.setEnabled(True)
             self.controls_settings_timeout_value.setEnabled(True)
+            self.controls_settings_button_connect.setEnabled(True)
             self.connection_status_label.setText("Failed to connect to device!")
 
     def controls_settings_disconnect(self):
@@ -131,22 +150,24 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
             self.controls_settings_ip_value.setEnabled(True)
             self.controls_settings_port_value.setEnabled(True)
             self.controls_settings_timeout_value.setEnabled(True)
+            self.controls_settings_button_disconnect.setEnabled(False)
+            self.controls_settings_button_connect.setEnabled(True)
             self.connection_status_label.setEnabled(False)
             self.connection_status_label.setText("Disconnected from Device")
 
     # Setters
     def set_position(self, x, y):
-        self.position_X_value.setText(x)
-        self.position_Y_value.setText(y)
+        self.position_X_value.setText(str(x))
+        self.position_Y_value.setText(str(y))
 
     def set_orientation(self, degrees):
-        self.orientation_value.setText(degrees)
+        self.orientation_value.setText(str(degrees))
 
     def set_speed(self, mps):
-        self.speed_value.setText(mps + "m/s")
+        self.speed_value.setText(str(mps) + "m/s")
 
     def set_sensor_reading(self, distance_in_meters):
-        self.sensor_reading_value.setText(distance_in_meters + "m")
+        self.sensor_reading_value.setText(str(distance_in_meters) + "m")
 
     def set_pwm(self, pwm_left, pwm_right):
         self.pwm_L_value.setValue(pwm_left)
@@ -165,6 +186,9 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
             self.set_orientation(state.orientation())
             self.set_sensor_reading(state.sensor_reading())
             self.set_speed(state.speed())
+
+    def closeEvent(self, event):
+        self.car.close()
 
 
 if __name__ == '__main__':

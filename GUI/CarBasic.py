@@ -11,3 +11,6 @@ class CarBasic:
         self.state = CarBasicState()
         self.graphicDriver = CarBasicGraphic(self.state)
         self.controller = CarBasicController(self.state)
+
+    def close(self):
+        self.controller.disconnect()

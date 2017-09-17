@@ -1,3 +1,4 @@
+import logging
 import json
 from NetworkManager import CarBasicNetworkManager, CarBasicProtocol
 
@@ -23,15 +24,22 @@ class CarBasicController:
     def parse_message(self, msg):
         """Parses a message received from the Robot"""
         data = json.loads(msg)
+
+        def get_data(tag):
+            if tag in data:
+                return data[tag]
+            else:
+                return None
+
         self.car.set_state(
-            data[CarBasicProtocol.TCP_TAG_STATE_X],
-            data[CarBasicProtocol.TCP_TAG_STATE_Y],
-            data[CarBasicProtocol.TCP_TAG_STATE_ORIENTATION],
-            data[CarBasicProtocol.TCP_TAG_STATE_SENSOR_MEASUREMENT],
-            data[CarBasicProtocol.TCP_TAG_STATE_SENSOR_ORIENTATION],
-            data[CarBasicProtocol.TCP_TAG_STATE_SPEED],
-            data[CarBasicProtocol.TCP_TAG_STATE_PWM_LEFT],
-            data[CarBasicProtocol.TCP_TAG_STATE_PWM_RIGHT]
+            get_data(CarBasicProtocol.TCP_TAG_STATE_X),
+            get_data(CarBasicProtocol.TCP_TAG_STATE_Y),
+            get_data(CarBasicProtocol.TCP_TAG_STATE_ORIENTATION),
+            get_data(CarBasicProtocol.TCP_TAG_STATE_SENSOR_MEASUREMENT),
+            get_data(CarBasicProtocol.TCP_TAG_STATE_SENSOR_ORIENTATION),
+            get_data(CarBasicProtocol.TCP_TAG_STATE_SPEED),
+            get_data(CarBasicProtocol.TCP_TAG_STATE_PWM_LEFT),
+            get_data(CarBasicProtocol.TCP_TAG_STATE_PWM_RIGHT)
         )
 
     def connect(self, ip, port, timeout=10):
@@ -40,8 +48,7 @@ class CarBasicController:
         :returns True if Network Manager successfully connected to the device
         """
         self.networkManager = CarBasicNetworkManager(ip, port)
-        if self.networkManager.tcp_connection_initialization(timeout=timeout):
-            self.networkManager.start()
+        if self.networkManager.start(timeout=timeout):
             return True
         else:
             self.networkManager = None

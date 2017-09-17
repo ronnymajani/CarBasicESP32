@@ -1,30 +1,5 @@
 import json
-from NetworkManager import CarBasicNetworkManager
-
-
-class CarBasicProtocol(object):
-    """
-    This is a static class that defines the interactions between the Host and Robot
-    """
-    TCP_TAG_START = "{"
-    TCP_TAG_END = "}"
-    TCP_TAG_SEPARATOR = ","
-
-    TCP_TAG_STATE_X = "x"
-    TCP_TAG_STATE_Y = "y"
-    TCP_TAG_STATE_ORIENTATION = "o"
-    TCP_TAG_STATE_SENSOR_MEASUREMENT = "s"
-    TCP_TAG_STATE_SENSOR_ORIENTATION = "z"
-    TCP_TAG_STATE_SPEED = "v"
-    TCP_TAG_STATE_PWM_LEFT = "l"
-    TCP_TAG_STATE_PWM_RIGHT = "r"
-
-    @staticmethod
-    def generate_command(tag, value):
-        if isinstance(value, int):
-            return "\"%s\":%d" % (tag, value)
-        elif isinstance(value, float):
-            return "\"%s\":%f" % (tag, value)
+from NetworkManager import CarBasicNetworkManager, CarBasicProtocol
 
 
 class CarBasicController:
@@ -33,12 +8,14 @@ class CarBasicController:
         self.networkManager = None
 
     def data_available(self):
+        """Check if there is any previously received data that needs processing"""
         if self.networkManager is None:
             return False
         else:
             return self.networkManager.data_available()
 
     def update_car(self):
+        """Processes the next data set received by the Network Manager and updates the CarBasic state"""
         if self.data_available():
             data = self.networkManager.get_message()
             self.parse_message(data)
@@ -57,14 +34,25 @@ class CarBasicController:
             data[CarBasicProtocol.TCP_TAG_STATE_PWM_RIGHT]
         )
 
-    def connect(self, ip, port):
+    def connect(self, ip, port, timeout=10):
+        """Attempts to create a Network Manager and connect to a CarBasic robot at the given IP address
+        :returns False if Network Manager failed to connect to device
+        :returns True if Network Manager successfully connected to the device
+        """
         self.networkManager = CarBasicNetworkManager(ip, port)
-        self.networkManager.start()
-        # todo: implement a control to see if successfully connected
-        return True
+        if self.networkManager.tcp_connection_initialization(timeout=timeout):
+            self.networkManager.start()
+            return True
+        else:
+            self.networkManager = None
+            return False
 
     def disconnect(self):
-        if self.networkManager is not None:
+        """Disconnects from any previously connected device and ends the currently attached Network Manager task"""
+        if self.is_connected():
             self.networkManager.stop()
             del self.networkManager
             self.networkManager = None
+
+    def is_connected(self):
+        return self.networkManager is not None

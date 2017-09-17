@@ -1,4 +1,4 @@
-import sys
+import sys, time
 from PyQt4 import QtCore, QtGui, uic
 import logging
 from PanelMap import PanelMap
@@ -109,24 +109,30 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
     # Controls Settings
     def controls_settings_connect(self):
         ip = self.controls_settings_ip_value.text()
-        port = self.controls_settings_port_value.text()
+        port = self.controls_settings_port_value.value()
+        timeout = self.controls_settings_timeout_value.value()
         self.controls_settings_ip_value.setEnabled(False)
         self.controls_settings_port_value.setEnabled(False)
-        if self.car.controller.connect(ip, port):
+        self.controls_settings_timeout_value.setEnabled(False)
+        self.connection_status_label.setText("Connecting...")
+        if self.car.controller.connect(ip, port, timeout=timeout):
             self.connection_status_label.setEnabled(True)
             self.controls_widget.setCurrentIndex(0)
             self.connection_status_label.setText("Connected!")
         else:
             self.controls_settings_ip_value.setEnabled(True)
             self.controls_settings_port_value.setEnabled(True)
+            self.controls_settings_timeout_value.setEnabled(True)
             self.connection_status_label.setText("Failed to connect to device!")
 
     def controls_settings_disconnect(self):
-        self.car.controller.disconnect()
-        self.controls_settings_ip_value.setEnabled(True)
-        self.controls_settings_port_value.setEnabled(True)
-        self.connection_status_label.setEnabled(False)
-        self.connection_status_label.setText("Disconnected from Device")
+        if self.car.controller.is_connected():
+            self.car.controller.disconnect()
+            self.controls_settings_ip_value.setEnabled(True)
+            self.controls_settings_port_value.setEnabled(True)
+            self.controls_settings_timeout_value.setEnabled(True)
+            self.connection_status_label.setEnabled(False)
+            self.connection_status_label.setText("Disconnected from Device")
 
     # Setters
     def set_position(self, x, y):

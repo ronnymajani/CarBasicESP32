@@ -1,7 +1,6 @@
 from CarBasicState import CarBasicState
 from CarBasicGraphic import CarBasicGraphic
 from CarBasicController import CarBasicController
-from NetworkManager import CarBasicNetworkManager
 
 
 class CarBasic:

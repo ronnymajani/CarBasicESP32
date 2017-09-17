@@ -122,8 +122,6 @@ class _TCPSenderTask(threading.Thread):
             self.socket.send(out_msg)
 
 
-
-
 class CarBasicProtocol(object):
     """
     This is a static class that defines the interactions between the Host and Robot

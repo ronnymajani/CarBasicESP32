@@ -37,6 +37,5 @@ class PanelMap(QtGui.QWidget):
         qp.end()
 
     def draw(self):
-        self.logger.debug("Drawing")
         self.surface.fill(self.background_color)
         self.car.graphicDriver.draw(self.surface)

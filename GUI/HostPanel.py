@@ -1,28 +1,16 @@
-import sys, time
+import sys
 from PyQt4 import QtCore, QtGui, uic
 import logging
-import threading
 from PanelMap import PanelMap
 from CarBasic import CarBasic
 
 
 logging.basicConfig(level=logging.DEBUG)
 
-
+REFRESH_INTERVAL = 20  # refresh interval in ms
 qtCreatorFile = "host_panel.ui"
 
 UI_MainWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
-
-
-class UpdatePanel(threading.Thread):
-    def __init__(self, host_panel):
-        threading.Thread.__init__(self)
-        self.setName("Host Panel force update thread")
-        self.hostPanel = host_panel
-
-    def run(self):
-        while True:
-            self.hostPanel.repaint()
 
 
 class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
@@ -34,10 +22,11 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         self.car = CarBasic()
         self.panelMap = PanelMap(self.panel_canvas, self.car)
         self.logger = logging.getLogger(__name__)
-
+        self.timer = QtCore.QTimer(self)
+        self.timer.setInterval(REFRESH_INTERVAL)
+        self.connect(self.timer, QtCore.SIGNAL("timeout()"), self.update_panel)
+        self.timer.start()
         self.register_buttons()
-        self.updater = UpdatePanel(self)
-        self.updater.start()
 
     def register_buttons(self):
         """Register the callback functions for the GUI buttons"""
@@ -173,7 +162,7 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         self.pwm_L_value.setValue(pwm_left)
         self.pwm_R_value.setValue(pwm_right)
 
-    def paintEvent(self, event):
+    def update_panel(self):
         if self.car.controller.data_available():
             # get new data
             self.car.controller.update_car()
@@ -186,6 +175,7 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
             self.set_orientation(state.orientation())
             self.set_sensor_reading(state.sensor_reading())
             self.set_speed(state.speed())
+            self.repaint()
 
     def closeEvent(self, event):
         self.car.close()

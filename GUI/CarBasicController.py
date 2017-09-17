@@ -1,6 +1,7 @@
-import logging
 import json
 from NetworkManager import CarBasicNetworkManager, CarBasicProtocol
+
+# todo: implement motor control functions
 
 
 class CarBasicController:

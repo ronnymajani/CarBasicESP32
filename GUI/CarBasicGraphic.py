@@ -1,6 +1,6 @@
 import pygame
 import math
-from CarBasic import CarBasic
+from CarBasicState import CarBasicState
 
 
 class CarBasicGraphic:
@@ -9,7 +9,7 @@ class CarBasicGraphic:
     All the variables in this class are stored in pixels
     Conversion takes place automatically using the given scale factor
     """
-    def __init__(self, car=CarBasic(), scale=1.0, width=10, length=20, color=(150, 150, 150), line_color=(0, 0, 0)):
+    def __init__(self, car, scale=1.0, width=10, length=20, color=(150, 150, 150), line_color=(0, 0, 0)):
         """
         :param car: The CarBasic object to attach this class to
         :param scale: The pixel to meter ratio (how many pixels represent a meter)
@@ -24,13 +24,19 @@ class CarBasicGraphic:
         self.color = color
         self.line_color = line_color
         self.car = car
+        # History of all the previous measured points (to draw a map from these readings)
+        self.history = [(100, 100), (101, 100), (105, 100)]
 
     def draw(self, surface):
         surface_center_x = surface.get_width() / 2.0
         surface_center_y = surface.get_height() / 2.0
         points = self.get_coords(surface_center_x, surface_center_y)
+        self.history.append(points[5])
         pygame.draw.polygon(surface, self.color, points[0:4])  # draw the car's polygon (rectangle)
         pygame.draw.line(surface, self.line_color, points[4], points[5])  # draw the sensor reading's line
+
+        for point in self.history:
+            pygame.draw.circle(surface, self.line_color, (int(point[0]), int(point[1])), 3 * int(self.scale))
 
     def get_coords(self, canvas_center_x, canvas_center_y):
         """Returns a list of 6 coordinates,

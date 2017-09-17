@@ -1,23 +1,21 @@
 from PyQt4 import QtGui
 import pygame
 import logging
-from CarBasicGraphic import CarBasicGraphic
-from CarBasic import CarBasic
 
 logging.basicConfig(level=logging.DEBUG)
 
 pygame.init()
 
 
-class Map(QtGui.QWidget):
-    def __init__(self, parent):
+class PanelMap(QtGui.QWidget):
+    def __init__(self, parent, car):
         QtGui.QWidget.__init__(self, parent)
         self.setFixedWidth(parent.width())  # Set the width to match parent
         self.setFixedHeight(parent.height())  # Set the height to match parent
 
         # Initiate Logger
         self.logger = logging.getLogger(__name__)
-        self.car = CarBasicGraphic()
+        self.car = car
 
         self.logger.debug("Canvas Width = %d, Height = %d", self.width(), self.height())
 
@@ -31,7 +29,6 @@ class Map(QtGui.QWidget):
         self.surface.fill(self.background_color)
 
     def paintEvent(self, event):
-        self.draw()
         data = self.surface.get_buffer().raw
         self.canvas = QtGui.QImage(data, self.width(), self.height(), QtGui.QImage.Format_RGB32)
         qp = QtGui.QPainter()
@@ -40,5 +37,6 @@ class Map(QtGui.QWidget):
         qp.end()
 
     def draw(self):
+        self.logger.debug("Drawing")
         self.surface.fill(self.background_color)
-        self.car.draw(self.surface)
+        self.car.graphicDriver.draw(self.surface)

@@ -1,7 +1,8 @@
 import sys
 from PyQt4 import QtCore, QtGui, uic
 import logging
-from PanelMap import Map
+from PanelMap import PanelMap
+from CarBasic import CarBasic
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -17,9 +18,11 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         QtGui.QMainWindow.__init__(self)
         UI_MainWindow.__init__(self)
         self.setupUi(self)
-        self.Map = Map(self.robot_map)
 
+        self.car = CarBasic()
+        self.panelMap = PanelMap(self.panel_canvas, self.car)
         self.logger = logging.getLogger(__name__)
+
         self.register_buttons()
 
     def register_buttons(self):
@@ -48,6 +51,9 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
                                                       self.auto_controls_button_clicked(self.controls_button_motor_BR))
         self.controls_button_motor_BL.clicked.connect(lambda:
                                                       self.auto_controls_button_clicked(self.controls_button_motor_BL))
+        # Controls Settings
+        self.controls_settings_button_connect.clicked.connect(self.controls_settings_connect)
+        self.controls_settings_button_disconnect.clicked.connect(self.controls_settings_disconnect)
 
     # Controls Tab Widget
     def controls_widget_tab_changed(self):
@@ -100,6 +106,28 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         self.clear_auto_controls_buttons()
         # TODO: Stop Motors
 
+    # Controls Settings
+    def controls_settings_connect(self):
+        ip = self.controls_settings_ip_value.text()
+        port = self.controls_settings_port_value.text()
+        self.controls_settings_ip_value.setEnabled(False)
+        self.controls_settings_port_value.setEnabled(False)
+        if self.car.controller.connect(ip, port):
+            self.connection_status_label.setEnabled(True)
+            self.controls_widget.setCurrentIndex(0)
+            self.connection_status_label.setText("Connected!")
+        else:
+            self.controls_settings_ip_value.setEnabled(True)
+            self.controls_settings_port_value.setEnabled(True)
+            self.connection_status_label.setText("Failed to connect to device!")
+
+    def controls_settings_disconnect(self):
+        self.car.controller.disconnect()
+        self.controls_settings_ip_value.setEnabled(True)
+        self.controls_settings_port_value.setEnabled(True)
+        self.connection_status_label.setEnabled(False)
+        self.connection_status_label.setText("Disconnected from Device")
+
     # Setters
     def set_position(self, x, y):
         self.position_X_value.setText(x)
@@ -117,6 +145,20 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
     def set_pwm(self, pwm_left, pwm_right):
         self.pwm_L_value.setValue(pwm_left)
         self.pwm_R_value.setValue(pwm_right)
+
+    def paintEvent(self, event):
+        if self.car.controller.data_available():
+            # get new data
+            self.car.controller.update_car()
+            # update map
+            self.panelMap.draw()
+            # update widgets
+            state = self.car.state
+            self.set_position(state.x(), state.y())
+            self.set_pwm(state.pwm_left(), state.pwm_right())
+            self.set_orientation(state.orientation())
+            self.set_sensor_reading(state.sensor_reading())
+            self.set_speed(state.speed())
 
 
 if __name__ == '__main__':

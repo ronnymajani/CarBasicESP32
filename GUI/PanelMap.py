@@ -1,7 +1,8 @@
 from PyQt4 import QtGui
 import pygame
 import logging
-from CarBasic import CarBasicGraphic
+from CarBasicGraphic import CarBasicGraphic
+from CarBasic import CarBasic
 
 logging.basicConfig(level=logging.DEBUG)
 

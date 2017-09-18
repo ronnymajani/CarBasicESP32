@@ -106,7 +106,7 @@ void tcp_message_parser_task(void* pvParameters) {
 				}
 				else if(*c == '}' || *c == ',') { // parse current buffer
 					buffer[buffer_tail++] = '\0';
-					ESP_EARLY_LOGV(TAG, "Parsing substring: %s", buffer);
+//					ESP_EARLY_LOGV(TAG, "Parsing substring: %s", buffer);
 					carbasic_command_t command = string_to_command(buffer, buffer_tail);
 					if(command.command != CARBASIC_COMMAND_INVALID) {
 						xQueueSendToBack(command_queue, &command, portMAX_DELAY);
@@ -175,7 +175,7 @@ void tcp_receiver_task(void* pvParameters) {
 		}
 		char buff[100];
 		int retVal = recv(connection, buff, sizeof(char) * 100, 0);
-		ESP_EARLY_LOGV(TAG, "Received data from socket: %d");
+//		ESP_EARLY_LOGV(TAG, "Received data from socket: %d");
 		if(retVal == -1) {
 			ESP_EARLY_LOGE(TAG, "Error during function RECV (TCP Socket Programming)");
 			disconnect();

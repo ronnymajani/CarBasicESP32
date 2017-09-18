@@ -92,14 +92,14 @@ void init_tcp_service() {
  */
 void tcp_message_parser_task(void* pvParameters) {
 	static const char* TAG = "TCP Message Parser Task";
-	ESP_EARLY_LOGV(TAG, "Task Started");
+	ESP_EARLY_LOGI(TAG, "Task Started");
 
 	char buffer[TCP_MAX_SIZE_MESSAGE];
 	int buffer_tail = 0;
 	while(1) {
 		char* msg;
 		if(xQueueReceive(received_messages, &msg, portMAX_DELAY)) {
-			ESP_EARLY_LOGV(TAG, "Received Message to Parse: %s", msg);
+//			ESP_EARLY_LOGV(TAG, "Received Message to Parse: %s", msg);
 			for(char* c = msg; *c != '\0'; c++) {
 				if(*c == '{' || isspace((int)*c)) { // ignore
 					continue;
@@ -135,7 +135,7 @@ void tcp_message_parser_task(void* pvParameters) {
  */
 void tcp_sender_task(void* pvParameters) {
 	static const char* TAG = "TCP Sender Task";
-	ESP_EARLY_LOGV(TAG, "Task Started");
+	ESP_EARLY_LOGI(TAG, "Task Started");
 
 	while(1){
 			// make sure we are connected
@@ -150,7 +150,7 @@ void tcp_sender_task(void* pvParameters) {
 					free(msg);
 					abort();
 				} else {
-					ESP_EARLY_LOGV(TAG, "Message Sent >> %s", msg);
+//					ESP_EARLY_LOGV(TAG, "Message Sent >> %s", msg);
 					free(msg);
 				}
 			}
@@ -166,7 +166,7 @@ void tcp_sender_task(void* pvParameters) {
  */
 void tcp_receiver_task(void* pvParameters) {
 	static const char* TAG = "TCP Receiver Task";
-	ESP_EARLY_LOGV(TAG, "Task Started");
+	ESP_EARLY_LOGI(TAG, "Task Started");
 
 	while(1){
 		// make sure we are connected
@@ -190,9 +190,9 @@ void tcp_receiver_task(void* pvParameters) {
 			char* msg = malloc(retVal+1);
 			memcpy(msg, buff, retVal);
 			msg[retVal] = '\0';
-			ESP_EARLY_LOGV(TAG, "Received data = %s", msg);
+//			ESP_EARLY_LOGV(TAG, "Received data = %s", msg);
 			xQueueSend(received_messages, &msg, portMAX_DELAY);
-			ESP_EARLY_LOGV(TAG,"Appended to Queue");
+//			ESP_EARLY_LOGV(TAG,"Appended to Queue");
 		}
 	}
 }
@@ -207,7 +207,7 @@ void tcp_receiver_task(void* pvParameters) {
  */
 void tcp_listener_task(void* pvParameters) {
 	static const char* TAG = "TCP Listener Task";
-	ESP_EARLY_LOGV(TAG, "Task Started");
+	ESP_EARLY_LOGI(TAG, "Task Started");
 
 	int retCode;
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);

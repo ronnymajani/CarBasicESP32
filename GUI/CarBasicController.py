@@ -59,7 +59,6 @@ class CarBasicController:
         """Disconnects from any previously connected device and ends the currently attached Network Manager task"""
         if self.is_connected():
             self.networkManager.stop()
-            del self.networkManager
             self.networkManager = None
 
     def is_connected(self):

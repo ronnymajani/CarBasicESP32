@@ -31,6 +31,8 @@
 #define TASK_TCP_SENDER_PRIORITY 3
 #define TASK_TCP_SENDER_STACK_SIZE 2048
 
+#define TCP_DECIMAL_CHAR '.'
+
 /* Exported Functions */
 void init_tcp_service();
 

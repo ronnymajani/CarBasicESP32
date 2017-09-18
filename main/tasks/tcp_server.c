@@ -31,14 +31,16 @@ static QueueHandle_t received_messages;
 QueueHandle_t command_queue;
 QueueHandle_t outbox;
 
-/* Function Prototypes */
-static void tcp_listener_task(void*);
-static void tcp_receiver_task(void*);
-static void tcp_sender_task(void*);
+/* Tasks */
+void tcp_listener_task(void*);
+void tcp_receiver_task(void*);
+void tcp_sender_task(void*);
 
+/* Function Prototypes */
 void start_accepting_new_connections();
 void stop_accepting_new_connections();
 void disconnect();
+static carbasic_command_t string_to_command(char*, int);
 
 
 void init_tcp_service() {
@@ -75,11 +77,51 @@ void init_tcp_service() {
 }
 
 
-
+/* --------------------------- TCP Message Parser --------------------------- */
 /**
- * Deals with sending messages
+ * Parses the received messages and converts them into commands to be processed by the main application
  */
-static void tcp_sender_task(void* pvParameters) {
+void tcp_message_parser(void* pvParameters) {
+	static const char* TAG = "TCP Message Parser Task";
+	ESP_EARLY_LOGV(TAG, "Task Started");
+
+	char buffer[TCP_MAX_SIZE_MESSAGE];
+	int buffer_tail = 0;
+	while(1) {
+		char* msg;
+		if(xQueueReceive(received_messages, &msg, portMAX_DELAY)) {
+			for(char* c = msg; *c != '\0'; c++) {
+				if(*c == '}' || isspace(*c)) { // ignore
+					continue;
+				}
+				else if(*c == '}' || *c == ',') { // parse current buffer
+					carbasic_command_t command = string_to_command(buffer, buffer_tail);
+					if(command.command != CARBASIC_COMMAND_INVALID) {
+						xQueueSendToBack(command_queue, command, portMAX_DELAY);
+					}
+					buffer_tail = 0;
+				}
+				else { // append characters to buffer
+					buffer[buffer_tail++] = *c;
+					// If the buffer will overflow then discard all previous data
+					if(buffer_tail >= TCP_MAX_SIZE_MESSAGE) {
+						buffer_tail = 0;
+					}
+				}
+			}
+			free(msg);  // free the string since we no longer need its
+		}
+	}
+}
+
+
+
+/* --------------------------- TCP Sender Task --------------------------- */
+/**
+ * Deals with sending messages.
+ * Gets new messages from the outbox queue and sends them.
+ */
+void tcp_sender_task(void* pvParameters) {
 	static const char* TAG = "TCP Sender Task";
 	ESP_EARLY_LOGV(TAG, "Task Started");
 
@@ -89,25 +131,28 @@ static void tcp_sender_task(void* pvParameters) {
 				continue;
 			}
 			char* msg;
-			xQueueReceive(outbox, &msg, portMAX_DELAY);
-			int retCode = send(connection, msg, strlen(msg), 0);
-
-			if(retCode == -1) {
-				ESP_EARLY_LOGE(TAG, "Failed to send message:\n%s\non socket %d", msg, connection);
-				free(msg);
-				abort();
-			} else {
-				ESP_EARLY_LOGV(TAG, "Message Sent >> %s", msg);
-				free(msg);
+			if(xQueueReceive(outbox, &msg, portMAX_DELAY)) {
+				int retCode = send(connection, msg, strlen(msg), 0);
+				if(retCode == -1) {
+					ESP_EARLY_LOGE(TAG, "Failed to send message:\n%s\non socket %d", msg, connection);
+					free(msg);
+					abort();
+				} else {
+					ESP_EARLY_LOGV(TAG, "Message Sent >> %s", msg);
+					free(msg);
+				}
 			}
 	}
 }
 
 
+/* --------------------------- TCP Receiver Task --------------------------- */
 /**
- * Deals with incoming messages
+ * Deals with incoming messages.
+ * Appends them to the received messaged to queue (to be parsed by the message parsing task).
+ * Also deals with disconnection discoveries.
  */
-static void tcp_receiver_task(void* pvParameters) {
+void tcp_receiver_task(void* pvParameters) {
 	static const char* TAG = "TCP Receiver Task";
 	ESP_EARLY_LOGV(TAG, "Task Started");
 
@@ -126,7 +171,7 @@ static void tcp_receiver_task(void* pvParameters) {
 			abort();  // todo: handle this error
 
 		} else if(retVal == 0) {
-			ESP_EARLY_LOGI(TAG, "Client Socket [%d] disconnected. Removing...", connection);
+			ESP_EARLY_LOGI(TAG, "Client Socket [%d] disconnected...", connection);
 			disconnect();
 			start_accepting_new_connections();
 		} else {
@@ -140,12 +185,14 @@ static void tcp_receiver_task(void* pvParameters) {
 }
 
 
+/* --------------------------- TCP Listener Task --------------------------- */
 /**
  * Binds a port to the application,
  * Listens for incoming connections,
  * and accepts them.
+ * Then signals the other tasks that a connection has been established
  */
-static void tcp_listener_task(void* pvParameters) {
+void tcp_listener_task(void* pvParameters) {
 	static const char* TAG = "TCP Listener Task";
 	ESP_EARLY_LOGV(TAG, "Task Started");
 
@@ -176,7 +223,7 @@ static void tcp_listener_task(void* pvParameters) {
 		}
 		struct sockaddr_in clientAddress;
 		socklen_t clientAddressLength = sizeof(clientAddress);
-		ESP_EARLY_LOGV(TAG, "Accepting new connections");
+		ESP_EARLY_LOGV(TAG, "Accepting new connection");
 		int clientSock = accept(sock, (struct sockaddr*)&clientAddress, &clientAddressLength);
 
 		if(clientSock == -1) {
@@ -195,7 +242,7 @@ static void tcp_listener_task(void* pvParameters) {
 }
 
 
-/* --------------- STATIC FUNCTIONS --------------- */
+/* --------------- SUPPORT FUNCTIONS --------------- */
 void start_accepting_new_connections() {
 	xEventGroupSetBits(tcp_events, event_accepting);
 }
@@ -208,6 +255,59 @@ void disconnect() {
 	closesocket(connection);
 	connection = -1;
 	xEventGroupClearBits(tcp_events, event_connected);
+}
+
+/* --------------- STATIC FUNCTIONS --------------- */
+/**
+ * Parses a given string into a CarBasic Command type
+ * Assumes that the string is in the form "letter":value
+ * where letter is a single character and is surrounded by ASCII quotation marks
+ * also assumes that value is a valid integer or float
+ * The created command object will contain the int value or both the int and float value (if the value is a float)
+ */
+static carbasic_command_t string_to_command(char* string, int len) {
+	carbasic_command_t result;
+	if(len < 5) {
+		result.command = CARBASIC_COMMAND_INVALID; // indicate an invalid command string
+		return result;
+	}
+
+	result.command = string[1];
+	string += 4; // set the string pointer to refer to the first character after the ':' divider
+	char* pValid;
+	int value = strtol(string, &pValid);
+
+	if(pValid == string) { // failed to convert
+		result.command = CARBASIC_COMMAND_INVALID;
+		return result;
+	}
+	else {
+		if(*pValid == '\0') { // the entire string was converted into an int
+			result.value_int = value;
+			result.type = INT;
+			return result;
+		}
+		// conversion stopped at a decimal point, the string might be a float
+		else if(*pValid == TCP_DECIMAL_CHAR) {
+			result.value_int = value;  // save the int value
+			// now try converting to a float
+			float value = strtof(string, &pValid);
+			if(*pValid == '\0') {
+				result.value_float = value;
+				result.type = FLOAT;
+				return result;
+			} else {
+				result.type = INT;
+				return result;
+			}
+		} else { // we were able to extract an integer but the string contained invalid characters
+			result.command = CARBASIC_COMMAND_INVALID;
+			return result;
+		}
+	}
+
+
+
 }
 
 

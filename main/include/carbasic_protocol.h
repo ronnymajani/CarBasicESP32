@@ -16,4 +16,6 @@ typedef struct {
 } carbasic_command_t;
 
 
+#define CARBASIC_COMMAND_INVALID '-'
+
 #endif /* MAIN_INCLUDE_CARBASIC_PROTOCOL_H_ */

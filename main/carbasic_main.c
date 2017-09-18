@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <tcp_service.h>
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -9,7 +8,8 @@
 /* Application Includes */
 #include "carbasic_main.h"
 #include "wifi.h"
-#include "tasks/include/application_task.h"
+#include "application_task.h"
+#include "tcp_service.h"
 
 
 /* Static Definitions */

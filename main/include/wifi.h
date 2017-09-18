@@ -12,8 +12,8 @@
 #define WIFI_PASS "CarBasic2018"
 #define WIFI_MAX_STA_CONN 2
 
-#define WIFI_TEST_STA_SSID "AndroidAB"
-#define WIFI_TEST_STA_PASS "(e=mc^2);"
+#define WIFI_TEST_STA_SSID "Majani Family"
+#define WIFI_TEST_STA_PASS "ramarajab"
 
 void wifi_init_softap();
 void wifi_init_sta();

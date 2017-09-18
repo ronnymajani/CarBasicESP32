@@ -28,7 +28,7 @@ static EventGroupHandle_t tcp_events;
 static const int event_accepting = (1<<0);
 static const int event_connected = (1<<1);
 
-static QueueHandle_t received_messages;
+QueueHandle_t received_messages;
 QueueHandle_t command_queue;
 QueueHandle_t outbox;
 
@@ -99,11 +99,14 @@ void tcp_message_parser_task(void* pvParameters) {
 	while(1) {
 		char* msg;
 		if(xQueueReceive(received_messages, &msg, portMAX_DELAY)) {
+			ESP_EARLY_LOGV(TAG, "Received Message to Parse: %s", msg);
 			for(char* c = msg; *c != '\0'; c++) {
-				if(*c == '}' || isspace((int)*c)) { // ignore
+				if(*c == '{' || isspace((int)*c)) { // ignore
 					continue;
 				}
 				else if(*c == '}' || *c == ',') { // parse current buffer
+					buffer[buffer_tail++] = '\0';
+					ESP_EARLY_LOGV(TAG, "Parsing substring: %s", buffer);
 					carbasic_command_t command = string_to_command(buffer, buffer_tail);
 					if(command.command != CARBASIC_COMMAND_INVALID) {
 						xQueueSendToBack(command_queue, &command, portMAX_DELAY);
@@ -188,7 +191,8 @@ void tcp_receiver_task(void* pvParameters) {
 			memcpy(msg, buff, retVal);
 			msg[retVal] = '\0';
 			ESP_EARLY_LOGV(TAG, "Received data = %s", msg);
-			xQueueSendToBack(received_messages, msg, portMAX_DELAY);
+			xQueueSend(received_messages, &msg, portMAX_DELAY);
+			ESP_EARLY_LOGV(TAG,"Appended to Queue");
 		}
 	}
 }

@@ -27,8 +27,8 @@ void application_task(void* p) {
 					"--command: %c\n", cmd.command);
 			if(cmd.type == INT) {
 				printf("--type: INT\n"
-						"--value: %d", cmd.value_int);
-			} else {
+						"--value: %d\n", cmd.value_int);
+			} else if(cmd.type == FLOAT) {
 				printf("--type: FLOAT\n"
 						"--value(int): %d\n"
 						"--value(float): %f\n", cmd.value_int, cmd.value_float);

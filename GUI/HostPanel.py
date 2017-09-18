@@ -37,6 +37,7 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         self.controls_pwm_R.valueChanged.connect(self.controls_pwm_value_changed)
         self.controls_pwm_L.valueChanged.connect(self.controls_pwm_value_changed)
         # Auto Controls
+        self.controls_auto_pwm.valueChanged.connect(self.controls_auto_pwm_value_changed)
         self.controls_auto_button_motor_stop.clicked.connect(self.auto_controls_stop_button_clicked)
         self.controls_button_motor_F.clicked.connect(lambda:
                                                      self.auto_controls_button_clicked(self.controls_button_motor_F))
@@ -62,7 +63,6 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
     def controls_widget_tab_changed(self):
         index = self.controls_widget.currentIndex()
         self.logger.debug("Tab changed: index %d", index)
-        # TODO: Stop Motors
 
     # Manual Controls Tab
     def controls_button_motor_start_stop_clicked(self):
@@ -71,17 +71,18 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         if button.text() == "START":
             self.logger.debug("Starting motors")
             button.setText("STOP")
-            # TODO: Start Motor
+            self.controls_pwm_value_changed()
+            self.car.controller.set_direction_forward()
+            self.car.controller.start_car()
         elif button.text() == "STOP":
             self.logger.debug("Stopping motors")
             button.setText("START")
-            # TODO: Stop Motor
+            self.car.controller.stop_car()
 
     def controls_pwm_value_changed(self):
         pwm_right = self.controls_pwm_R.value()
         pwm_left = self.controls_pwm_L.value()
-        self.set_pwm(pwm_left, pwm_right)
-        # TODO: Set PWM Duty Cycle of Motors
+        self.car.controller.set_car_pwm(pwm_right, pwm_left)
 
     # Auto Controls Tab
     def clear_auto_controls_buttons(self):
@@ -95,19 +96,39 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         self.controls_button_motor_BR.setChecked(False)
         self.controls_button_motor_BL.setChecked(False)
 
+    def controls_auto_pwm_value_changed(self):
+        pwm = self.controls_auto_pwm.value()
+        self.car.controller.set_car_pwm(pwm, pwm)
+
     def auto_controls_button_clicked(self, button):
         is_checked = button.isChecked()
         self.clear_auto_controls_buttons()
         if is_checked:
             button.setChecked(True)
             direction = button.text()
-            # TODO: Drive car in the Buttons direction
+            pwm = self.controls_auto_pwm.value()
+            if direction == "F":
+                self.car.controller.move_car_forward(pwm)
+            if direction == "FR":
+                self.car.controller.move_car_forward_right(pwm)
+            if direction == "FL":
+                self.car.controller.move_car_forward_left(pwm)
+            if direction == "B":
+                self.car.controller.move_car_reverse(pwm)
+            if direction == "BL":
+                self.car.controller.move_car_reverse_left(pwm)
+            if direction == "BR":
+                self.car.controller.move_car_reverse_right(pwm)
+            if direction == "R":
+                self.car.controller.rotate_car_clockwise(pwm)
+            if direction == "L":
+                self.car.controller.rotate_car_counter_clockwise(pwm)
         else:
             self.auto_controls_stop_button_clicked()
 
     def auto_controls_stop_button_clicked(self):
         self.clear_auto_controls_buttons()
-        # TODO: Stop Motors
+        self.car.controller.stop_car()
 
     # Controls Settings
     def controls_settings_connect(self):
@@ -159,8 +180,12 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         self.sensor_reading_value.setText(str(distance_in_meters) + "m")
 
     def set_pwm(self, pwm_left, pwm_right):
+        # Set indicators
         self.pwm_L_value.setValue(pwm_left)
         self.pwm_R_value.setValue(pwm_right)
+        # Move sliders
+        self.controls_pwm_L.setValue(pwm_left)
+        self.controls_pwm_R.setValue(pwm_right)
 
     def update_panel(self):
         if self.car.controller.data_available():

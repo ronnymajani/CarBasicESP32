@@ -52,23 +52,7 @@ static void createTasks() {
 		for(;;);
 	}
 
-	/* TCP Server Task */
-	ESP_LOGV(TAG, "Creating TCP Server Task");
-	retCode = (xTaskCreate(&tcp_server_task, TASK_TCP_SERVER_NAME, TASK_TCP_SERVER_STACK_SIZE, NULL, TASK_TCP_SERVER_PRIORITY, NULL));
-
-	if(retCode != pdPASS) {
-		ESP_LOGE(TAG, "Failed to create TCP Server Task");
-		for(;;);
-	}
-
-	/* TCP Listener Task */
-	ESP_LOGV(TAG, "Creating TCP Listener Task");
-	retCode = (xTaskCreate(&tcp_listener_task, TASK_TCP_LISTENER_NAME, TASK_TCP_LISTENER_STACK_SIZE, NULL, TASK_TCP_LISTENER_PRIORITY, NULL));
-
-	if(retCode != pdPASS) {
-		ESP_LOGE(TAG, "Failed to create TCP Listener Task");
-		for(;;);
-	}
+	init_tcp_service();
 }
 
 

@@ -9,83 +9,134 @@
 #include "lwip/sockets.h"
 #include "tcpip_adapter.h"
 #include "string.h"
+#include "freertos/queue.h"
+#include "freertos/event_groups.h"
 
 #include "tcp_server.h"
+#include "carbasic_protocol.h"
 
 
 /* Static Function Prototypes */
 //static int espx_last_socket_errno(int);
-static void initialize_connections();
-static void add_connection(int);
-static void remove_connection(int);
-static void get_connections_fdset(fd_set*);
-static int get_max_socket_number();
 
 /* Global Variables */
 static const char* TAG = "TCP Server";
-static struct {
-	int numberOfConnections;
-	int* sockets;
-} connections;
+
+static int connection = -1;
+static EventGroupHandle_t tcp_events;
+static const int event_accepting = (1<<0);
+static const int event_connected = (1<<1);
+
+static QueueHandle_t received_messages;
+QueueHandle_t command_queue;
+QueueHandle_t outbox;
+
+/* Function Prototypes */
+static void tcp_listener_task(void*);
+static void tcp_receiver_task(void*);
+static void tcp_sender_task(void*);
+
+void start_accepting_new_connections();
+void stop_accepting_new_connections();
+void disconnect();
+
+
+void init_tcp_service() {
+	tcp_events = xEventGroupCreate();
+	xEventGroupClearBits(tcp_events, 0xFF);  // clear all bits
+	xEventGroupSetBits(tcp_events, event_accepting);  // set the 'accepting' flag to start accepting new connections
+
+	// initialize Queues
+	received_messages = xQueueCreate(TCP_RECEIVED_MESSAGES_BUFFER_SIZE, sizeof(char*));  // received TCP data
+	command_queue = xQueueCreate(TCP_COMMAND_BUFFER_SIZE, sizeof(carbasic_command_t));  // command queue (received commands)
+	outbox = xQueueCreate(TCP_OUTBOX_BUFFER_SIZE, sizeof(char*));  // outbox (messages to send)
+
+
+	/* TCP Listener Task */
+	ESP_LOGV(TAG, "Creating TCP Listener Task");
+	if((xTaskCreate(&tcp_listener_task, TASK_TCP_LISTENER_NAME, TASK_TCP_LISTENER_STACK_SIZE, NULL, TASK_TCP_LISTENER_PRIORITY, NULL)) != pdPASS) {
+		ESP_LOGE(TAG, "Failed to create TCP Listener Task");
+		for(;;);
+	}
+
+	/* TCP Server Task */
+	ESP_LOGV(TAG, "Creating TCP Receiver Task");
+	if((xTaskCreate(&tcp_receiver_task, TASK_TCP_RECEIVER_NAME, TASK_TCP_RECEIVER_STACK_SIZE, NULL, TASK_TCP_RECEIVER_PRIORITY, NULL)) != pdPASS) {
+		ESP_LOGE(TAG, "Failed to create TCP Receiver Task");
+		for(;;);
+	}
+
+	/* TCP Listener Task */
+	ESP_LOGV(TAG, "Creating TCP Sender Task");
+	if((xTaskCreate(&tcp_sender_task, TASK_TCP_SENDER_NAME, TASK_TCP_SENDER_STACK_SIZE, NULL, TASK_TCP_SENDER_PRIORITY, NULL)) != pdPASS) {
+		ESP_LOGE(TAG, "Failed to create TCP Sender Task");
+		for(;;);
+	}
+}
 
 
 
+/**
+ * Deals with sending messages
+ */
+static void tcp_sender_task(void* pvParameters) {
+	static const char* TAG = "TCP Sender Task";
+	ESP_EARLY_LOGV(TAG, "Task Started");
+
+	while(1){
+			// make sure we are connected
+			if((xEventGroupWaitBits(tcp_events, event_connected, pdFALSE, pdFALSE, portMAX_DELAY) & event_connected) == 0) {
+				continue;
+			}
+			char* msg;
+			xQueueReceive(outbox, &msg, portMAX_DELAY);
+			int retCode = send(connection, msg, strlen(msg), 0);
+
+			if(retCode == -1) {
+				ESP_EARLY_LOGE(TAG, "Failed to send message:\n%s\non socket %d", msg, connection);
+				free(msg);
+				abort();
+			} else {
+				ESP_EARLY_LOGV(TAG, "Message Sent >> %s", msg);
+				free(msg);
+			}
+	}
+}
 
 
 /**
  * Deals with incoming messages
  */
-void tcp_server_task(void* pvParameters) {
-	static const char* TAG = "TCP Server Task";
+static void tcp_receiver_task(void* pvParameters) {
+	static const char* TAG = "TCP Receiver Task";
 	ESP_EARLY_LOGV(TAG, "Task Started");
 
-	struct timeval timeout;
-	timeout.tv_sec = 5;
-	timeout.tv_usec = 0;
-
-	while(1) {
-		fd_set readfds;
-		int paramN;
-		int retCode;
-
-		get_connections_fdset(&readfds);
-		paramN = get_max_socket_number() + 1;
-		retCode = select(paramN, &readfds, NULL, NULL, &timeout);
-
-		if(retCode == -1) { // error
-			ESP_EARLY_LOGE(TAG, "Error during function SELECT (TCP Socket Programming)");
-			abort();
+	while(1){
+		// make sure we are connected
+		if((xEventGroupWaitBits(tcp_events, event_connected, pdFALSE, pdFALSE, portMAX_DELAY) & event_connected) == 0) {
+			continue;
 		}
-		else if(retCode == 0) {
-//			ESP_EARLY_LOGV(TAG, "Select timed out");
-		}
-		else if(retCode > 0) { // >0 means that at least 1 socket is ready to be read
-			ESP_EARLY_LOGV(TAG, "Select function returned");
-			for(int i = 0; i < connections.numberOfConnections; i++) {
-				int sock = connections.sockets[i];
-				if(FD_ISSET(sock, &readfds)) { // current socket is ready for reading
-					//TODO: do something here?
-					char buff[10];
-					int retVal = recv(sock, buff, sizeof(char) * 10, 0);
-					ESP_EARLY_LOGV(TAG, "Received data from socket: %d");
-					if(retVal == -1) {
-						ESP_EARLY_LOGE(TAG, "Error during function RECV (TCP Socket Programming)");
-						abort();
-					} else if(retVal == 0) {
-						ESP_EARLY_LOGI(TAG, "Client Socket [%d] disconnected. Removing...", sock);
-						remove_connection(sock);
-					} else {
-						char* msg = malloc(retVal+1);
-						memcpy(msg, buff, retVal);
-						msg[retVal] = '\0';
-						ESP_EARLY_LOGV(TAG, "Received data = %s", msg);
-						free(msg);
-					}
-				}
-			}
+		char buff[100];
+		int retVal = recv(connection, buff, sizeof(char) * 100, 0);
+		ESP_EARLY_LOGV(TAG, "Received data from socket: %d");
+		if(retVal == -1) {
+			ESP_EARLY_LOGE(TAG, "Error during function RECV (TCP Socket Programming)");
+			disconnect();
+			stop_accepting_new_connections();
+			abort();  // todo: handle this error
+
+		} else if(retVal == 0) {
+			ESP_EARLY_LOGI(TAG, "Client Socket [%d] disconnected. Removing...", connection);
+			disconnect();
+			start_accepting_new_connections();
+		} else {
+			char* msg = malloc(retVal+1);
+			memcpy(msg, buff, retVal);
+			msg[retVal] = '\0';
+			ESP_EARLY_LOGV(TAG, "Received data = %s", msg);
+			xQueueSendToBack(received_messages, msg, portMAX_DELAY);
 		}
 	}
-
 }
 
 
@@ -94,12 +145,9 @@ void tcp_server_task(void* pvParameters) {
  * Listens for incoming connections,
  * and accepts them.
  */
-void tcp_listener_task(void* pvParameters) {
+static void tcp_listener_task(void* pvParameters) {
 	static const char* TAG = "TCP Listener Task";
 	ESP_EARLY_LOGV(TAG, "Task Started");
-
-	// initialize `connections` global variable
-	initialize_connections();
 
 	int retCode;
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -122,24 +170,47 @@ void tcp_listener_task(void* pvParameters) {
 	}
 
 	while(1) {
+		EventBits_t bits = xEventGroupWaitBits(tcp_events, event_accepting, pdTRUE, pdFALSE, portMAX_DELAY);
+		if((bits & event_accepting) == 0){  // make sure the bits were set (to check if a timeout occurred)
+			continue;
+		}
 		struct sockaddr_in clientAddress;
 		socklen_t clientAddressLength = sizeof(clientAddress);
 		ESP_EARLY_LOGV(TAG, "Accepting new connections");
 		int clientSock = accept(sock, (struct sockaddr*)&clientAddress, &clientAddressLength);
+
 		if(clientSock == -1) {
 			ESP_EARLY_LOGE(TAG, "Failed to Accept incoming connection");
 			abort();
 		}
+
 		ESP_EARLY_LOGI(TAG, "New Client Connected, socket:%d, ip:%s, port:%d",
 				clientSock,
 				ip4addr_ntoa((ip4_addr_t*)&(clientAddress.sin_addr.s_addr)),
 				clientAddress.sin_port);
-		add_connection(clientSock);
+
+		connection = clientSock;
+		xEventGroupSetBits(tcp_events, event_connected);  //
 	}
 }
 
 
 /* --------------- STATIC FUNCTIONS --------------- */
+void start_accepting_new_connections() {
+	xEventGroupSetBits(tcp_events, event_accepting);
+}
+
+void stop_accepting_new_connections() {
+	xEventGroupClearBits(tcp_events, event_accepting);
+}
+
+void disconnect() {
+	closesocket(connection);
+	connection = -1;
+	xEventGroupClearBits(tcp_events, event_connected);
+}
+
+
 /**
  * Returns the most recent error code related to the given socket
  * (taken from the "Kolban ESP32" book)
@@ -152,98 +223,3 @@ static int espx_last_socket_errno(int socket) {
 	return ret;
 }
 */
-
-
-/**
- * initializes the 'connections' global variable
- */
-static void initialize_connections() {
-	connections.numberOfConnections = 0;
-	connections.sockets = NULL;
-}
-
-/**
- * Adds a connection to the global list of connections
- */
-static void add_connection(int clientSocket) {
-	if(connections.sockets == NULL) {
-		connections.sockets = malloc(sizeof(int));
-		if(connections.sockets == NULL) {
-			ESP_EARLY_LOGE(TAG, "Failed to allocate memory for new connection");
-			abort();
-		}
-	}
-	else {
-		connections.sockets = realloc(connections.sockets, sizeof(int) * (connections.numberOfConnections + 1));
-		if(connections.sockets == NULL) {
-			ESP_EARLY_LOGE(TAG, "Failed to re-allocate memory for new connection");
-			abort();
-		}
-	}
-	connections.sockets[connections.numberOfConnections] = clientSocket;
-	connections.numberOfConnections++;
-}
-
-
-/**
- * Remove a given connection socket
- */
-static void remove_connection(int sock) {
-	int n = connections.numberOfConnections;
-	int index = -1;
-	int* socks = connections.sockets;
-
-	// find the socket to remove
-	for(int i = 0; i < n; i++) {
-		if(socks[i] == sock) {
-			index = i;
-			break;
-		}
-	}
-
-	if(index >= 0) {
-		closesocket(socks[index]);
-		// reorder list
-		for(int i = index; i < n-1; i++) {
-			socks[i] = socks[i+1];
-		}
-		// shrink size of list
-		connections.numberOfConnections--;
-		if(connections.numberOfConnections > 0) {
-			connections.sockets = realloc(connections.sockets, sizeof(int) * connections.numberOfConnections);
-			if(connections.sockets == NULL) {
-				ESP_EARLY_LOGE(TAG, "Failed to re-allocate less memory for connections.sockets list");
-				abort();
-			}
-		} else {
-			free(connections.sockets);
-			connections.sockets = NULL;
-		}
-	}
-}
-
-/**
- * Returns an FD_SET containing all the connections
- */
-static void get_connections_fdset(fd_set* connections_fds) {
-	FD_ZERO(connections_fds);
-
-	for(int i = 0; i < connections.numberOfConnections; i++) {
-//		ESP_EARLY_LOGV(TAG, "setting socket [%d] in FDS", connections.sockets[i]);
-		FD_SET(connections.sockets[i], connections_fds);
-	}
-}
-
-
-
-/**
- * Returns the largest socket number
- * Which is the number of the last socket added to our list
- */
-static int get_max_socket_number() {
-	if(connections.numberOfConnections == 0 || connections.sockets == NULL) {
-		return 0;
-	} else {
-		return connections.sockets[connections.numberOfConnections-1];
-	}
-}

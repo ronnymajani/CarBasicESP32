@@ -9,11 +9,12 @@
 #include "lwip/sockets.h"
 #include "tcpip_adapter.h"
 #include "string.h"
+#include "ctype.h"
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
 
-#include "tcp_server.h"
 #include "carbasic_protocol.h"
+#include "tcp_service.h"
 
 
 /* Static Function Prototypes */
@@ -32,6 +33,7 @@ QueueHandle_t command_queue;
 QueueHandle_t outbox;
 
 /* Tasks */
+void tcp_message_parser_task(void*);
 void tcp_listener_task(void*);
 void tcp_receiver_task(void*);
 void tcp_sender_task(void*);
@@ -68,10 +70,17 @@ void init_tcp_service() {
 		for(;;);
 	}
 
-	/* TCP Listener Task */
+	/* TCP Sender Task */
 	ESP_LOGV(TAG, "Creating TCP Sender Task");
 	if((xTaskCreate(&tcp_sender_task, TASK_TCP_SENDER_NAME, TASK_TCP_SENDER_STACK_SIZE, NULL, TASK_TCP_SENDER_PRIORITY, NULL)) != pdPASS) {
 		ESP_LOGE(TAG, "Failed to create TCP Sender Task");
+		for(;;);
+	}
+
+	/* TCP Message Parser Task */
+	ESP_LOGV(TAG, "Creating TCP Message Parser Task");
+	if((xTaskCreate(&tcp_message_parser_task, TASK_TCP_MESSAGE_PARSER_NAME, TASK_TCP_MESSAGE_PARSER_STACK_SIZE, NULL, TASK_TCP_MESSAGE_PARSER_PRIORITY, NULL)) != pdPASS) {
+		ESP_LOGE(TAG, "Failed to create TCP Message Parser Task");
 		for(;;);
 	}
 }
@@ -81,7 +90,7 @@ void init_tcp_service() {
 /**
  * Parses the received messages and converts them into commands to be processed by the main application
  */
-void tcp_message_parser(void* pvParameters) {
+void tcp_message_parser_task(void* pvParameters) {
 	static const char* TAG = "TCP Message Parser Task";
 	ESP_EARLY_LOGV(TAG, "Task Started");
 
@@ -91,13 +100,13 @@ void tcp_message_parser(void* pvParameters) {
 		char* msg;
 		if(xQueueReceive(received_messages, &msg, portMAX_DELAY)) {
 			for(char* c = msg; *c != '\0'; c++) {
-				if(*c == '}' || isspace(*c)) { // ignore
+				if(*c == '}' || isspace((int)*c)) { // ignore
 					continue;
 				}
 				else if(*c == '}' || *c == ',') { // parse current buffer
 					carbasic_command_t command = string_to_command(buffer, buffer_tail);
 					if(command.command != CARBASIC_COMMAND_INVALID) {
-						xQueueSendToBack(command_queue, command, portMAX_DELAY);
+						xQueueSendToBack(command_queue, &command, portMAX_DELAY);
 					}
 					buffer_tail = 0;
 				}
@@ -242,6 +251,14 @@ void tcp_listener_task(void* pvParameters) {
 }
 
 
+/* --------------- EXPORTED FUNCTIONS --------------- */
+carbasic_command_t get_command() {
+	carbasic_command_t result;
+	xQueueReceive(command_queue, &result, portMAX_DELAY);
+	return result;
+}
+
+
 /* --------------- SUPPORT FUNCTIONS --------------- */
 void start_accepting_new_connections() {
 	xEventGroupSetBits(tcp_events, event_accepting);
@@ -275,7 +292,7 @@ static carbasic_command_t string_to_command(char* string, int len) {
 	result.command = string[1];
 	string += 4; // set the string pointer to refer to the first character after the ':' divider
 	char* pValid;
-	int value = strtol(string, &pValid);
+	int value = strtol(string, &pValid, 10);
 
 	if(pValid == string) { // failed to convert
 		result.command = CARBASIC_COMMAND_INVALID;

@@ -5,9 +5,10 @@
  *      Author: ronnymajani
  */
 
-#ifndef MAIN_TASKS_INCLUDE_TCP_SERVER_H_
-#define MAIN_TASKS_INCLUDE_TCP_SERVER_H_
+#ifndef MAIN_TASKS_INCLUDE_TCP_SERVICE_H_
+#define MAIN_TASKS_INCLUDE_TCP_SERVICE_H_
 
+#include "carbasic_protocol.h"
 
 #define TCP_SERVER_PORT 9900
 #define TCP_SERVER_BACKLOG 1
@@ -31,9 +32,14 @@
 #define TASK_TCP_SENDER_PRIORITY 3
 #define TASK_TCP_SENDER_STACK_SIZE 2048
 
+#define TASK_TCP_MESSAGE_PARSER_NAME "TCP_Message_Parser"
+#define TASK_TCP_MESSAGE_PARSER_PRIORITY 3
+#define TASK_TCP_MESSAGE_PARSER_STACK_SIZE 2048
+
 #define TCP_DECIMAL_CHAR '.'
 
 /* Exported Functions */
 void init_tcp_service();
+carbasic_command_t get_command();
 
-#endif /* MAIN_TASKS_INCLUDE_TCP_SERVER_H_ */
+#endif /* MAIN_TASKS_INCLUDE_TCP_SERVICE_H_ */

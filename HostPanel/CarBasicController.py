@@ -64,6 +64,13 @@ class CarBasicController:
     def is_connected(self):
         return self.networkManager is not None
 
+    def get_latency(self):
+        """Returns the time difference (in milliseconds) between two received commands as a string!"""
+        if self.networkManager is not None:
+            return self.networkManager.get_latency() * 1000
+        else:
+            return 0
+
     def move(self, pwm_right, pwm_left, dir_right, dir_left):
         """Tells the car to move with the given pmw values and directions"""
         if self.is_connected():

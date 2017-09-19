@@ -8,6 +8,7 @@ from CarBasic import CarBasic
 logging.basicConfig(level=logging.DEBUG)
 
 REFRESH_INTERVAL = 20  # refresh interval in ms
+LATENCY_REFRESH_INTERVAL = 250  # refresh interval for Latency indicator
 qtCreatorFile = "host_panel.ui"
 
 UI_MainWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
@@ -22,10 +23,18 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         self.car = CarBasic()
         self.panelMap = PanelMap(self.panel_canvas, self.car)
         self.logger = logging.getLogger(__name__)
+
+        # Panel Updater timer
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(REFRESH_INTERVAL)
         self.connect(self.timer, QtCore.SIGNAL("timeout()"), self.update_panel)
         self.timer.start()
+        # Latency Updater timer
+        self.latencyTimer = QtCore.QTimer(self)
+        self.latencyTimer.setInterval(LATENCY_REFRESH_INTERVAL)
+        self.connect(self.latencyTimer, QtCore.SIGNAL("timeout()"), self.update_latency)
+        self.latencyTimer.start()
+
         self.register_buttons()
 
     def register_buttons(self):
@@ -165,6 +174,7 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
             self.connection_status_label.setEnabled(False)
             self.connection_status_label.setText("Disconnected from Device")
 
+
     # Setters
     def set_position(self, x, y):
         self.position_X_value.setText(str(x))
@@ -201,6 +211,9 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
             self.set_sensor_reading(state.sensor_reading())
             self.set_speed(state.speed())
             self.repaint()
+
+    def update_latency(self):
+        self.network_latency_value.setText("%07.03f" % self.car.controller.get_latency())
 
     def closeEvent(self, event):
         self.car.close()

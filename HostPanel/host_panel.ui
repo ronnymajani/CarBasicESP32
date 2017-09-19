@@ -1043,12 +1043,68 @@
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
+   <widget class="QFrame" name="frame_network_latency">
+    <property name="geometry">
+     <rect>
+      <x>690</x>
+      <y>560</y>
+      <width>141</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Panel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Sunken</enum>
+    </property>
+    <widget class="QLabel" name="network_latency_label">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>0</y>
+       <width>61</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Latency:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="network_latency_value">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>0</y>
+       <width>71</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>000.000</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </widget>
    <zorder>panel_canvas</zorder>
    <zorder>frame_details</zorder>
    <zorder>frame_pwm</zorder>
    <zorder>frame_position</zorder>
    <zorder>controls_widget</zorder>
    <zorder>connection_status_label</zorder>
+   <zorder>frame_network_latency</zorder>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionExit">

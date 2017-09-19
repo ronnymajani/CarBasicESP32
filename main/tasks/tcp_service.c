@@ -108,7 +108,7 @@ void tcp_message_parser_task(void* pvParameters) {
 					buffer[buffer_tail++] = '\0';
 //					ESP_EARLY_LOGV(TAG, "Parsing substring: %s", buffer);
 					carbasic_command_t command = string_to_command(buffer, buffer_tail);
-					if(command.command != CARBASIC_COMMAND_INVALID) {
+					if(command.command_type != CARBASIC_INVALID_COMMAND) {
 						xQueueSendToBack(command_queue, &command, portMAX_DELAY);
 					}
 					buffer_tail = 0;
@@ -313,10 +313,10 @@ int try_to_send_command_list(carbasic_command_t* command_list, int num_commands,
 		carbasic_command_t command = command_list[i];
 		int string_len = 0;
 
-		if(command.type == INT) {
-			string_len = snprintf(string_tail, remaining_chars, "\"%c\":%d%c", command.command, command.value_int, TCP_TAG_SEPARATOR);
-		} else if(command.type == FLOAT) {
-			string_len = snprintf(string_tail, remaining_chars, "\"%c\":%f%c", command.command, command.value_float, TCP_TAG_SEPARATOR);
+		if(command.value_type == INT) {
+			string_len = snprintf(string_tail, remaining_chars, "\"%c\":%d%c", command.command_type, command.value_int, TCP_TAG_SEPARATOR);
+		} else if(command.value_type == FLOAT) {
+			string_len = snprintf(string_tail, remaining_chars, "\"%c\":%f%c", command.command_type, command.value_float, TCP_TAG_SEPARATOR);
 		}
 
 		remaining_chars -= string_len;  // subtract the number of chars that were written to command_string
@@ -419,23 +419,23 @@ void disconnect() {
 static carbasic_command_t string_to_command(char* string, int len) {
 	carbasic_command_t result;
 	if(len < 5) {
-		result.command = CARBASIC_COMMAND_INVALID; // indicate an invalid command string
+		result.command_type = CARBASIC_INVALID_COMMAND; // indicate an invalid command string
 		return result;
 	}
 
-	result.command = string[1];
+	result.command_type = string[1];
 	string += 4; // set the string pointer to refer to the first character after the ':' divider
 	char* pValid;
 	int value = strtol(string, &pValid, 10);
 
 	if(pValid == string) { // failed to convert
-		result.command = CARBASIC_COMMAND_INVALID;
+		result.command_type = CARBASIC_INVALID_COMMAND;
 		return result;
 	}
 	else {
 		if(*pValid == '\0') { // the entire string was converted into an int
 			result.value_int = value;
-			result.type = INT;
+			result.value_type = INT;
 			return result;
 		}
 		// conversion stopped at a decimal point, the string might be a float
@@ -445,14 +445,14 @@ static carbasic_command_t string_to_command(char* string, int len) {
 			float value = strtof(string, &pValid);
 			if(*pValid == '\0') {
 				result.value_float = value;
-				result.type = FLOAT;
+				result.value_type = FLOAT;
 				return result;
 			} else {
-				result.type = INT;
+				result.value_type = INT;
 				return result;
 			}
 		} else { // we were able to extract an integer but the string contained invalid characters
-			result.command = CARBASIC_COMMAND_INVALID;
+			result.command_type = CARBASIC_INVALID_COMMAND;
 			return result;
 		}
 	}

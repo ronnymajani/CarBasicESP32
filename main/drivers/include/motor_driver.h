@@ -47,16 +47,19 @@
 void set_motor_right_direction_forward();
 void set_motor_right_direction_reverse();
 int set_motor_right_pwm(int pwm);
+void enable_motor_right();
 void disable_motor_right();
 
 void set_motor_left_direction_forward();
 void set_motor_left_direction_reverse();
 int set_motor_left_pwm(int pwm);
+void enable_motor_left();
 void disable_motor_left();
 
 void set_motors_direction_forward();
 void set_motors_direction_reverse();
 int set_motors_pwm(int pwm);
+void enable_motors();
 void disable_motors();
 
 

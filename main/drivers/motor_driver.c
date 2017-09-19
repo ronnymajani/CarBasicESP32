@@ -93,10 +93,16 @@ int set_motor_right_pwm(int pwm) {
 	return set_pwm(MOTOR_RIGHT_PWM_CHANNEL, pwm);
 }
 
+void enable_motor_right() {
+	gpio_set_level(MOTOR_RIGHT_F_GPIO, 1);
+	gpio_set_level(MOTOR_RIGHT_R_GPIO, 1);
+}
+
 void disable_motor_right() {
 	gpio_set_level(MOTOR_RIGHT_F_GPIO, 0);
 	gpio_set_level(MOTOR_RIGHT_R_GPIO, 0);
 }
+
 
 /* Left Motors */
 void set_motor_left_direction_forward() {
@@ -111,10 +117,16 @@ int set_motor_left_pwm(int pwm) {
 	return set_pwm(MOTOR_LEFT_PWM_CHANNEL, pwm);
 }
 
+void enable_motor_left() {
+	gpio_set_level(MOTOR_LEFT_F_GPIO, 1);
+	gpio_set_level(MOTOR_LEFT_R_GPIO, 1);
+}
+
 void disable_motor_left() {
 	gpio_set_level(MOTOR_LEFT_F_GPIO, 0);
 	gpio_set_level(MOTOR_LEFT_R_GPIO, 0);
 }
+
 
 /* All Motors */
 void set_motors_direction_forward() {
@@ -129,6 +141,11 @@ void set_motors_direction_reverse() {
 
 int set_motors_pwm(int pwm) {
 	return set_motor_left_pwm(pwm) && set_motor_right_pwm(pwm);
+}
+
+void enable_motors() {
+	enable_motor_right();
+	enable_motor_left();
 }
 
 void disable_motors() {

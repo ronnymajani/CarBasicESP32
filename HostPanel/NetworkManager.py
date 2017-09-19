@@ -146,6 +146,7 @@ class CarBasicProtocol(object):
     TCP_TAG_START = "{"
     TCP_TAG_END = "}"
     TCP_TAG_SEPARATOR = ","
+    TCP_TAG_INVALID_COMMAND = "-"
 
     TCP_TAG_STATE_X = "x"
     TCP_TAG_STATE_Y = "y"

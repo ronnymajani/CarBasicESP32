@@ -1,0 +1,34 @@
+todo:
+=====
+- Host Panel :: solve Threads not ending after GUI is closed
+- Host Panel :: When disconnected disable control tabs
+- Host Panel :: Add a "network latency" field in the GUI to show how much time passed between each received message
+- Implement Command Parser function
+- add another flag the car state: uncertainty
+
+
+Tasks:
+======
+- Ultrasonic driver
+- Servo motor driver
+
+
+
+Questions:
+==========
+
+
+
+
+Ideas:
+======
+
+
+
+
+Snippets:
+=========
+
+
+
+

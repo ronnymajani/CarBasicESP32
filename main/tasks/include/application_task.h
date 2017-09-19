@@ -10,7 +10,7 @@
 
 #define TASK_APP_NAME "APP"
 #define TASK_APP_PRIORITY tskIDLE_PRIORITY
-#define TASK_APP_STACK_SIZE 2048
+#define TASK_APP_STACK_SIZE 4096
 
 void application_task(void*);
 

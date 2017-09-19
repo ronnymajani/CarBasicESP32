@@ -22,24 +22,31 @@
 /* Tasks */
 #define TASK_TCP_LISTENER_NAME "TCP_Listener"
 #define TASK_TCP_LISTENER_PRIORITY 5
-#define TASK_TCP_LISTENER_STACK_SIZE 2048
+#define TASK_TCP_LISTENER_STACK_SIZE 4096
 
 #define TASK_TCP_RECEIVER_NAME "TCP_Receiver"
 #define TASK_TCP_RECEIVER_PRIORITY 3
-#define TASK_TCP_RECEIVER_STACK_SIZE 2048
+#define TASK_TCP_RECEIVER_STACK_SIZE 4096
 
 #define TASK_TCP_SENDER_NAME "TCP_Sender"
 #define TASK_TCP_SENDER_PRIORITY 3
-#define TASK_TCP_SENDER_STACK_SIZE 2048
+#define TASK_TCP_SENDER_STACK_SIZE 4096
 
 #define TASK_TCP_MESSAGE_PARSER_NAME "TCP_Message_Parser"
 #define TASK_TCP_MESSAGE_PARSER_PRIORITY 2
-#define TASK_TCP_MESSAGE_PARSER_STACK_SIZE 2048
+#define TASK_TCP_MESSAGE_PARSER_STACK_SIZE 4096
 
+/* TAGS */
+#define TCP_TAG_START '{'
+#define TCP_TAG_SEPARATOR ','
+#define TCP_TAG_END '}'
 #define TCP_DECIMAL_CHAR '.'
 
 /* Exported Functions */
 void init_tcp_service();
 carbasic_command_t get_command();
+int command_is_available();
+void send_command(carbasic_command_t);
+int try_to_send_command(carbasic_command_t, int);
 
 #endif /* MAIN_TASKS_INCLUDE_TCP_SERVICE_H_ */

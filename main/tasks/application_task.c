@@ -42,14 +42,14 @@ void application_task(void* p) {
 		if(command_is_available()) {
 			print_a_command();
 		}
-		carbasic_command_t cmd;
-		cmd.command = 'x';
-		cmd.type = INT;
-		cmd.value_int = i;
-		send_command(cmd);
-
-		cmd.command = 'y';
-		send_command(cmd);
+		carbasic_command_t cmd[2];
+		cmd[0].command = 'x';
+		cmd[0].type = INT;
+		cmd[0].value_int = i;
+		cmd[1].command = 'y';
+		cmd[1].type = INT;
+		cmd[1].value_int = i;
+		send_command_list(cmd, 2);
 
 		i += 1;
 		i %= 150;

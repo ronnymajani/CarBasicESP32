@@ -282,12 +282,13 @@ int command_is_available() {
 }
 
 
+
 /**
  * Generates a compound command string from the given commands and appends them to the outbox queue to be sent by the TCP Sender Task
  * If the outbox queue is full, this function will block and wait the specified amount of time for free space to become available
  * @param command_list A list of commands to send
  * @param num_commands How many commands the given command list contains
- * @param maxWaitTime The maximum time (in miliseconds) to wait if outbox queue is full; 0 to not wait at all; -1 to wait as long as possible
+ * @param maxWaitTime >0 The maximum time (in miliseconds) to wait if outbox queue is full; 0 to not wait at all; -1 to wait as long as possible
  * @returns pdTRUE if command was successfully appended to outbox queue
  * @returns pdFALSE if failed to append comman to the outbox queue
  */
@@ -322,7 +323,7 @@ int try_to_send_command_list(carbasic_command_t* command_list, int num_commands,
 		string_tail += string_len;
 	}
 	// Calculate the length of the generated command string
-	size_t command_string_len = TCP_MAX_SIZE_MESSAGE - remaining_chars;
+	size_t command_string_len = string_tail - command_string;
 	if (command_string_len < 7) {
 		ESP_EARLY_LOGE(TAG, "Something went wrong! Failed to generate command string");
 		return pdFALSE;
@@ -333,6 +334,10 @@ int try_to_send_command_list(carbasic_command_t* command_list, int num_commands,
 	command_string[command_string_len] = '\0';  // add the NULL terminator (in case it's not there)
 	// Copy the command string to the heap, allocating the minimum needed memory to store the string
 	char* message = malloc(command_string_len + 1);
+	if(message == NULL) {
+		ESP_EARLY_LOGE(TAG, "Failed to allocate memory for new command string!");
+		return pdFALSE;
+	}
 	strcpy(message, command_string);
 
 	// calculate Maximum Ticks to Wait
@@ -349,13 +354,26 @@ int try_to_send_command_list(carbasic_command_t* command_list, int num_commands,
 
 
 /**
+ * Generates a compound command string from the given commands and appends them to the outbox queue to be sent by the TCP Sender Task
+ * If the outbox queue is full, this function will block and wait for as long as possible until free space becomes available
+ * Note: This is a wrapper function for @ref try_to_send_command_list
+ * @param command_list A list of commands to send
+ * @param num_commands How many commands the given command list contains
+ */
+void send_command_list(carbasic_command_t* command_list, int num_commands) {
+	try_to_send_command_list(command_list, num_commands, -1);
+}
+
+
+/**
  * Adds a command to the outbox queue to be sent by the TCP Sender Task
  * If the outbox is full, this commmand will block until space is made available
+ * Note: This is a wrapper function for @ref send_command_list
  * @param command The single command to send
  * @param command The command to be sent
  */
 void send_command(carbasic_command_t command) {
-	try_to_send_command(command, -1);
+	send_command_list(&command, 1);
 }
 
 
@@ -364,32 +382,14 @@ void send_command(carbasic_command_t command) {
  * If the outbox queue is full, this command will wait until either:
  * Space is made available in the outbox queue
  * or The given time limit is reach.
+ * Note: This is a wrapper function for @ref try_to_send_command_list
  * @param command The single command to send
- * @param maxWaitTime The maximum time (in miliseconds) to wait if outbox queue is full; 0 to not wait at all; -1 to wait as long as possible
+ * @param >0 maxWaitTime The maximum time (in miliseconds) to wait if outbox queue is full; 0 to not wait at all; -1 to wait as long as possible
  * @returns pdTRUE if command was successfully appended to outbox queue
  * @returns pdFALSE if failed to append comman to the outbox queue
  */
 int try_to_send_command(carbasic_command_t command, int maxWaitTime) {
-	char command_string[TCP_MAX_SIZE_MESSAGE];
-	int string_len = 0;
-	if(command.type == INT) {
-		string_len = snprintf(command_string, TCP_MAX_SIZE_MESSAGE, "{\"%c\":%d}", command.command, command.value_int);
-	} else if(command.type == FLOAT) {
-		string_len = snprintf(command_string, TCP_MAX_SIZE_MESSAGE, "{\"%c\":%f}", command.command, command.value_float);
-	}
-	char* message = malloc(sizeof(char) * (string_len + 1));
-	strncpy(message, command_string, string_len);
-	message[string_len] = '\0';
-
-	int maxWaitTicks = 0;
-	if(maxWaitTime < 0) {
-		maxWaitTicks = portMAX_DELAY;
-	} else if(maxWaitTime == 0) {
-		maxWaitTicks = 0;
-	} else {
-		maxWaitTicks = maxWaitTime / portTICK_PERIOD_MS;
-	}
-	return xQueueSend(outbox, &message, maxWaitTicks);
+	return try_to_send_command_list(&command, 1, maxWaitTime);
 }
 
 

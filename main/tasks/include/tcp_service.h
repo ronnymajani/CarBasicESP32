@@ -46,7 +46,10 @@
 void init_tcp_service();
 carbasic_command_t get_command();
 int command_is_available();
-void send_command(carbasic_command_t);
+
+int try_to_send_command_list(carbasic_command_t*, int, int);
+void send_command_list(carbasic_command_t*, int);
 int try_to_send_command(carbasic_command_t, int);
+void send_command(carbasic_command_t);
 
 #endif /* MAIN_TASKS_INCLUDE_TCP_SERVICE_H_ */

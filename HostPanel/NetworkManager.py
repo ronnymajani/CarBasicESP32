@@ -61,6 +61,7 @@ class _TCPReceiverTask(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.setName("TCP Receiver")
+        self.daemon = True
 
         self.socket = None
         self.messageQueue = Queue.Queue()
@@ -104,10 +105,12 @@ class _TCPSenderTask(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.setName("TCP Sender")
+        self.daemon = True
 
         self.socket = None
         self.outbox = Queue.Queue()
         self.running = False
+
 
     def set_socket(self, sock):
         self.socket = sock

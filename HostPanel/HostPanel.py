@@ -193,9 +193,9 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         # Set indicators
         self.pwm_L_value.setValue(pwm_left)
         self.pwm_R_value.setValue(pwm_right)
-        # Move sliders
-        self.controls_pwm_L.setValue(pwm_left)
-        self.controls_pwm_R.setValue(pwm_right)
+        # # Move sliders
+        # self.controls_pwm_L.setValue(pwm_left)
+        # self.controls_pwm_R.setValue(pwm_right)
 
     def update_panel(self):
         if self.car.controller.data_available():

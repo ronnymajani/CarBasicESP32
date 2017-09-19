@@ -30,10 +30,12 @@ void application_task(void* p) {
 
 	// Task Loop
 	for(;;) {
-		if(command_is_available()) {
-			parse_new_command();
-		}
-		move_car();
+//		if(command_is_available()) {
+//			parse_new_command();
+//		}
+//		move_car();
+//		broadcast_state();
+		parse_new_command();
 		broadcast_state();
 	}
 }
@@ -42,14 +44,17 @@ void application_task(void* p) {
 
 static void parse_new_command() {
 	carbasic_command_t command = get_command();
+	print_a_command(command);
 	switch(command.command_type) {
 		case CARBASIC_COMMAND_PWM_RIGHT: {
-			float pwm = MOTOR_DRIVER_MAX_PWM / command.value_float;
+			float pwm = command.value_float;
+			if(pwm > 0) {pwm = MOTOR_DRIVER_MAX_PWM / pwm;}
 			car_state.pwm_right = pwm;
 			set_motor_right_pwm((int)pwm);
 		}	break;
 		case CARBASIC_COMMAND_PWM_LEFT: {
-			float pwm = MOTOR_DRIVER_MAX_PWM / command.value_float;
+			float pwm = command.value_float;
+			if(pwm > 0) {pwm = MOTOR_DRIVER_MAX_PWM / pwm;}
 			car_state.pwm_left = pwm;
 			set_motor_left_pwm((int)pwm);
 		}	break;
@@ -113,10 +118,10 @@ static void broadcast_state() {
 		commands[5].value_float = car_state.speed;
 	commands[6].command_type = CARBASIC_STATE_PWM_RIGHT;
 		commands[6].value_type = INT;
-		commands[6].value_float = car_state.pwm_right;
+		commands[6].value_int = car_state.pwm_right / MOTOR_DRIVER_MAX_PWM;
 	commands[7].command_type = CARBASIC_STATE_PWM_LEFT;
 		commands[7].value_type = INT;
-		commands[7].value_float = car_state.pwm_left;
+		commands[7].value_int = car_state.pwm_left / MOTOR_DRIVER_MAX_PWM;
 
 	send_command_list(commands, 8);
 }

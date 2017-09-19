@@ -4,7 +4,6 @@ import logging
 from PanelMap import PanelMap
 from CarBasic import CarBasic
 
-
 logging.basicConfig(level=logging.DEBUG)
 
 REFRESH_INTERVAL = 1  # refresh interval in ms
@@ -23,6 +22,7 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         self.car = CarBasic()
         self.panelMap = PanelMap(self.panel_canvas, self.car)
         self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
 
         # Panel Updater timer
         self.timer = QtCore.QTimer(self)

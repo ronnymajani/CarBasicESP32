@@ -25,13 +25,13 @@ class CarBasicGraphic:
         self.line_color = line_color
         self.car = car
         # History of all the previous measured points (to draw a map from these readings)
-        self.history = [(100, 100), (101, 100), (105, 100)]
+        self.history = []
 
     def draw(self, surface):
         surface_center_x = surface.get_width() / 2.0
         surface_center_y = surface.get_height() / 2.0
         points = self.get_coords(surface_center_x, surface_center_y)
-        self.history.append(points[5])
+        # self.history.append(points[5])
         pygame.draw.polygon(surface, self.color, points[0:4])  # draw the car's polygon (rectangle)
         pygame.draw.line(surface, self.line_color, points[4], points[5])  # draw the sensor reading's line
 

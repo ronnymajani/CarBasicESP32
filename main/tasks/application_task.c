@@ -47,12 +47,10 @@ static void parse_new_command() {
 		case CARBASIC_COMMAND_PWM_RIGHT: {
 			if(command.value_type == INT) {
 				int pwm = MOTOR_DRIVER_MAX_PWM * command.value_float / 100.0f;
-				ESP_EARLY_LOGV(TAG, "pwm:%d", pwm);
 				car_state.pwm_right = pwm;
 				set_motor_right_pwm(pwm);
 			} else {
 				float pwm = MOTOR_DRIVER_MAX_PWM * command.value_float / 100.0f;
-				ESP_EARLY_LOGV(TAG, "pwm:%f", pwm);
 				car_state.pwm_right = pwm;
 				set_motor_right_pwm((int)pwm);
 			}
@@ -60,12 +58,10 @@ static void parse_new_command() {
 		case CARBASIC_COMMAND_PWM_LEFT: {
 			if(command.value_type == INT) {
 				int pwm = MOTOR_DRIVER_MAX_PWM * command.value_float / 100.0f;
-				ESP_EARLY_LOGV(TAG, "pwm:%d", pwm);
 				car_state.pwm_left = pwm;
 				set_motor_left_pwm(pwm);
 			} else {
 				float pwm = MOTOR_DRIVER_MAX_PWM * command.value_float / 100.0f;
-				ESP_EARLY_LOGV(TAG, "pwm:%f", pwm);
 				car_state.pwm_left = pwm;
 				set_motor_left_pwm((int)pwm);
 			}
@@ -141,10 +137,17 @@ static void broadcast_state() {
 
 static void move_car() {
 	static int i = 0;
+	static int j = 0;
+
 	car_state.x = i;
 	car_state.y = i;
-	i += 1;
+	car_state.pwm_left = j;
+	car_state.pwm_right = j;
+
+	i++;
 	i %= 150;
+	j++;
+	j %= MOTOR_DRIVER_MAX_PWM;
 }
 
 

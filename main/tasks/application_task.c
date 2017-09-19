@@ -19,7 +19,7 @@ static const char* TAG = "APPLICATION_TASK";
 static void parse_new_command();
 static void broadcast_state();
 static void move_car();
-static void print_a_command();
+static void print_a_command(carbasic_command_t);
 
 static carbasic_state_t car_state;
 
@@ -30,12 +30,10 @@ void application_task(void* p) {
 
 	// Task Loop
 	for(;;) {
-//		if(command_is_available()) {
-//			parse_new_command();
-//		}
-//		move_car();
-//		broadcast_state();
-		parse_new_command();
+		if(command_is_available()) {
+			parse_new_command();
+		}
+		move_car();
 		broadcast_state();
 	}
 }
@@ -44,19 +42,33 @@ void application_task(void* p) {
 
 static void parse_new_command() {
 	carbasic_command_t command = get_command();
-	print_a_command(command);
+
 	switch(command.command_type) {
 		case CARBASIC_COMMAND_PWM_RIGHT: {
-			float pwm = command.value_float;
-			if(pwm > 0) {pwm = MOTOR_DRIVER_MAX_PWM / pwm;}
-			car_state.pwm_right = pwm;
-			set_motor_right_pwm((int)pwm);
+			if(command.value_type == INT) {
+				int pwm = MOTOR_DRIVER_MAX_PWM * command.value_float / 100.0f;
+				ESP_EARLY_LOGV(TAG, "pwm:%d", pwm);
+				car_state.pwm_right = pwm;
+				set_motor_right_pwm(pwm);
+			} else {
+				float pwm = MOTOR_DRIVER_MAX_PWM * command.value_float / 100.0f;
+				ESP_EARLY_LOGV(TAG, "pwm:%f", pwm);
+				car_state.pwm_right = pwm;
+				set_motor_right_pwm((int)pwm);
+			}
 		}	break;
 		case CARBASIC_COMMAND_PWM_LEFT: {
-			float pwm = command.value_float;
-			if(pwm > 0) {pwm = MOTOR_DRIVER_MAX_PWM / pwm;}
-			car_state.pwm_left = pwm;
-			set_motor_left_pwm((int)pwm);
+			if(command.value_type == INT) {
+				int pwm = MOTOR_DRIVER_MAX_PWM * command.value_float / 100.0f;
+				ESP_EARLY_LOGV(TAG, "pwm:%d", pwm);
+				car_state.pwm_left = pwm;
+				set_motor_left_pwm(pwm);
+			} else {
+				float pwm = MOTOR_DRIVER_MAX_PWM * command.value_float / 100.0f;
+				ESP_EARLY_LOGV(TAG, "pwm:%f", pwm);
+				car_state.pwm_left = pwm;
+				set_motor_left_pwm((int)pwm);
+			}
 		}	break;
 		case CARBASIC_COMMAND_MOTOR_RIGHT_ENABLE: {
 			if(command.value_int == CARBASIC_COMMAND_VALUE_ENABLE)
@@ -117,11 +129,11 @@ static void broadcast_state() {
 		commands[5].value_type = FLOAT;
 		commands[5].value_float = car_state.speed;
 	commands[6].command_type = CARBASIC_STATE_PWM_RIGHT;
-		commands[6].value_type = INT;
-		commands[6].value_int = car_state.pwm_right / MOTOR_DRIVER_MAX_PWM;
+		commands[6].value_type = FLOAT;
+		commands[6].value_float = 100.0f * (float)car_state.pwm_right / MOTOR_DRIVER_MAX_PWM;
 	commands[7].command_type = CARBASIC_STATE_PWM_LEFT;
-		commands[7].value_type = INT;
-		commands[7].value_int = car_state.pwm_left / MOTOR_DRIVER_MAX_PWM;
+		commands[7].value_type = FLOAT;
+		commands[7].value_float = 100.0f * (float)car_state.pwm_left / MOTOR_DRIVER_MAX_PWM;
 
 	send_command_list(commands, 8);
 }

@@ -7,7 +7,7 @@ from CarBasic import CarBasic
 
 logging.basicConfig(level=logging.DEBUG)
 
-REFRESH_INTERVAL = 20  # refresh interval in ms
+REFRESH_INTERVAL = 1  # refresh interval in ms
 LATENCY_REFRESH_INTERVAL = 250  # refresh interval for Latency indicator
 qtCreatorFile = "host_panel.ui"
 
@@ -89,8 +89,8 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
             self.car.controller.stop_car()
 
     def controls_pwm_value_changed(self):
-        pwm_right = self.controls_pwm_R.value()
-        pwm_left = self.controls_pwm_L.value()
+        pwm_right = float(self.controls_pwm_R.value())
+        pwm_left = float(self.controls_pwm_L.value())
         self.car.controller.set_car_pwm(pwm_right, pwm_left)
 
     # Auto Controls Tab
@@ -106,7 +106,7 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         self.controls_button_motor_BL.setChecked(False)
 
     def controls_auto_pwm_value_changed(self):
-        pwm = self.controls_auto_pwm.value()
+        pwm = float(self.controls_auto_pwm.value())
         self.car.controller.set_car_pwm(pwm, pwm)
 
     def auto_controls_button_clicked(self, button):

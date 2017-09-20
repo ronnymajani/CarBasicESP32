@@ -1,6 +1,5 @@
 todo:
 =====
-- Implement Command Parser function
 - add another flag the car state: uncertainty
 
 

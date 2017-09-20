@@ -44,6 +44,8 @@
 
 
 /* Exported Functions */
+void init_motor_driver();
+
 void set_motor_right_direction_forward();
 void set_motor_right_direction_reverse();
 int set_motor_right_pwm(int pwm);

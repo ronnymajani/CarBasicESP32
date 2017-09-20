@@ -5,8 +5,8 @@
  *      Author: ronnymajani
  */
 
-#ifndef MAIN_INCLUDE_CARBASIC_STATE_H_
-#define MAIN_INCLUDE_CARBASIC_STATE_H_
+#ifndef MAIN_DRIVERS_INCLUDE_CARBASIC_STATE_H_
+#define MAIN_DRIVERS_INCLUDE_CARBASIC_STATE_H_
 
 typedef struct {
 	float x;
@@ -24,4 +24,4 @@ typedef struct {
 /* Exported Functions */
 carbasic_state_t carbasic_new_state();
 
-#endif /* MAIN_INCLUDE_CARBASIC_STATE_H_ */
+#endif /* MAIN_DRIVERS_INCLUDE_CARBASIC_STATE_H_ */

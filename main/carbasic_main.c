@@ -8,6 +8,8 @@
 /* Application Includes */
 #include "carbasic_main.h"
 #include "wifi.h"
+#include "motor_driver.h"
+#include "ultrasonic_driver.h"
 #include "application_task.h"
 #include "tcp_service.h"
 
@@ -23,13 +25,13 @@ static void createTasks();
 
 void app_main()
 {
-	ESP_LOGV(TAG, "Starting Main Task");
+	ESP_LOGI(TAG, "Starting Main Task");
 
 	setup();
 	setLogLevels();
 	createTasks();
 
-    ESP_LOGV(TAG, "Starting RTOS Scheduler");
+	ESP_LOGI(TAG, "All Tasks Created");
 }
 
 
@@ -60,4 +62,6 @@ static void createTasks() {
 static void setup() {
 	ESP_LOGV(TAG, "Starting Setup Function");
 	wifi_init_sta();
+//	motor_driver_init();
+	ultrasonic_driver_init();
 }

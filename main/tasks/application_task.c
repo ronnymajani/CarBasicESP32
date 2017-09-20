@@ -13,6 +13,7 @@
 #include "carbasic_state.h"
 #include "tcp_service.h"
 #include "motor_driver.h"
+#include "ultrasonic_driver.h"
 
 static const char* TAG = "APPLICATION_TASK";
 
@@ -30,11 +31,14 @@ void application_task(void* p) {
 
 	// Task Loop
 	for(;;) {
-		if(command_is_available()) {
-			parse_new_command();
+		ESP_LOGD(TAG, "Triggering...");
+		ultrasonic_trigger();
+		vTaskDelay(50/portTICK_PERIOD_MS);
+		if(ultrasonic_measurement_ready()) {
+			double distance = ultrasonic_get_measurement();
+			ESP_LOGI(TAG, "Distance: %f\n", distance);
 		}
-		move_car();
-		broadcast_state();
+		vTaskDelay(500/portTICK_PERIOD_MS);
 	}
 }
 

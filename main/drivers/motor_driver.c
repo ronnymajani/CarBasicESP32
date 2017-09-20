@@ -23,7 +23,7 @@
 /**
  * Initializes the pins needed for the Motor Driver and performs the necessary configuration
  */
-void init_motor_driver() {
+void motor_driver_init() {
 	/* Initialize GPIO Pins */
 	gpio_config_t motor_pin_config;
 	motor_pin_config.intr_type = GPIO_PIN_INTR_DISABLE;

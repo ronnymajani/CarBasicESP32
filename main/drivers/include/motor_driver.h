@@ -62,6 +62,8 @@ int set_motors_pwm(int pwm);
 void enable_motors();
 void disable_motors();
 
+void motor_driver_init();
+
 
 
 #endif /* MAIN_DRIVERS_INCLUDE_MOTOR_DRIVER_H_ */

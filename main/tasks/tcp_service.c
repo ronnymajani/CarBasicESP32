@@ -92,21 +92,21 @@ void init_tcp_service() {
  */
 void tcp_message_parser_task(void* pvParameters) {
 	static const char* TAG = "TCP Message Parser Task";
-	ESP_EARLY_LOGI(TAG, "Task Started");
+	ESP_LOGI(TAG, "Task Started");
 
 	char buffer[TCP_MAX_SIZE_MESSAGE];
 	int buffer_tail = 0;
 	while(1) {
 		char* msg;
 		if(xQueueReceive(received_messages, &msg, portMAX_DELAY)) {
-//			ESP_EARLY_LOGV(TAG, "Received Message to Parse: %s", msg);
+//			ESP_LOGV(TAG, "Received Message to Parse: %s", msg);
 			for(char* c = msg; *c != '\0'; c++) {
 				if(*c == '{' || isspace((int)*c)) { // ignore
 					continue;
 				}
 				else if(*c == '}' || *c == ',') { // parse current buffer
 					buffer[buffer_tail++] = '\0';
-//					ESP_EARLY_LOGV(TAG, "Parsing substring: %s", buffer);
+//					ESP_LOGV(TAG, "Parsing substring: %s", buffer);
 					carbasic_command_t command = string_to_command(buffer, buffer_tail);
 					if(command.command_type != CARBASIC_INVALID_COMMAND) {
 						xQueueSendToBack(command_queue, &command, portMAX_DELAY);
@@ -135,7 +135,7 @@ void tcp_message_parser_task(void* pvParameters) {
  */
 void tcp_sender_task(void* pvParameters) {
 	static const char* TAG = "TCP Sender Task";
-	ESP_EARLY_LOGI(TAG, "Task Started");
+	ESP_LOGI(TAG, "Task Started");
 
 	while(1){
 			// make sure we are connected
@@ -146,14 +146,14 @@ void tcp_sender_task(void* pvParameters) {
 			if(xQueueReceive(outbox, &msg, portMAX_DELAY)) {
 				int retCode = send(connection, msg, strlen(msg), 0);
 				if(retCode == -1) {
-					ESP_EARLY_LOGE(TAG, "Failed to send message:\n%s\non socket %d", msg, connection);
+					ESP_LOGE(TAG, "Failed to send message:\n%s\non socket %d", msg, connection);
 					free(msg);
 					if(connection != -1) {  // error is not due to disconnection!
 						disconnect();
 						abort();
 					}
 				} else {
-//					ESP_EARLY_LOGV(TAG, "Message Sent >> %s", msg);
+//					ESP_LOGV(TAG, "Message Sent >> %s", msg);
 					free(msg);
 				}
 			}
@@ -169,7 +169,7 @@ void tcp_sender_task(void* pvParameters) {
  */
 void tcp_receiver_task(void* pvParameters) {
 	static const char* TAG = "TCP Receiver Task";
-	ESP_EARLY_LOGI(TAG, "Task Started");
+	ESP_LOGI(TAG, "Task Started");
 
 	while(1){
 		// make sure we are connected
@@ -178,24 +178,24 @@ void tcp_receiver_task(void* pvParameters) {
 		}
 		char buff[100];
 		int retVal = recv(connection, buff, sizeof(char) * 100, 0);
-//		ESP_EARLY_LOGV(TAG, "Received data from socket: %d");
+//		ESP_LOGV(TAG, "Received data from socket: %d");
 		if(retVal == -1) {
-			ESP_EARLY_LOGE(TAG, "Error during function RECV (TCP Socket Programming)");
+			ESP_LOGE(TAG, "Error during function RECV (TCP Socket Programming)");
 			disconnect();
 			stop_accepting_new_connections();
 			abort();  // todo: handle this error
 
 		} else if(retVal == 0) {
-			ESP_EARLY_LOGI(TAG, "Client Socket [%d] disconnected...", connection);
+			ESP_LOGI(TAG, "Client Socket [%d] disconnected...", connection);
 			disconnect();
 			start_accepting_new_connections();
 		} else {
 			char* msg = malloc(retVal+1);
 			memcpy(msg, buff, retVal);
 			msg[retVal] = '\0';
-//			ESP_EARLY_LOGV(TAG, "Received data = %s", msg);
+//			ESP_LOGV(TAG, "Received data = %s", msg);
 			xQueueSend(received_messages, &msg, portMAX_DELAY);
-//			ESP_EARLY_LOGV(TAG,"Appended to Queue");
+//			ESP_LOGV(TAG,"Appended to Queue");
 		}
 	}
 }
@@ -210,7 +210,7 @@ void tcp_receiver_task(void* pvParameters) {
  */
 void tcp_listener_task(void* pvParameters) {
 	static const char* TAG = "TCP Listener Task";
-	ESP_EARLY_LOGI(TAG, "Task Started");
+	ESP_LOGI(TAG, "Task Started");
 
 	int retCode;
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -222,13 +222,13 @@ void tcp_listener_task(void* pvParameters) {
 
 	retCode = bind(sock, (struct sockaddr*)&serverAddress, sizeof(serverAddress));
 	if(retCode != 0) {
-		ESP_EARLY_LOGE(TAG, "Failed to Bind Socket");
+		ESP_LOGE(TAG, "Failed to Bind Socket");
 		abort();
 	}
 
 	retCode = listen(sock, TCP_SERVER_BACKLOG);
 	if(retCode != 0) {
-		ESP_EARLY_LOGE(TAG, "Failed to Start Listening on Socket");
+		ESP_LOGE(TAG, "Failed to Start Listening on Socket");
 		abort();
 	}
 
@@ -239,15 +239,15 @@ void tcp_listener_task(void* pvParameters) {
 		}
 		struct sockaddr_in clientAddress;
 		socklen_t clientAddressLength = sizeof(clientAddress);
-		ESP_EARLY_LOGV(TAG, "Accepting new connection");
+		ESP_LOGV(TAG, "Accepting new connection");
 		int clientSock = accept(sock, (struct sockaddr*)&clientAddress, &clientAddressLength);
 
 		if(clientSock == -1) {
-			ESP_EARLY_LOGE(TAG, "Failed to Accept incoming connection");
+			ESP_LOGE(TAG, "Failed to Accept incoming connection");
 			abort();
 		}
 
-		ESP_EARLY_LOGI(TAG, "New Client Connected, socket:%d, ip:%s, port:%d",
+		ESP_LOGI(TAG, "New Client Connected, socket:%d, ip:%s, port:%d",
 				clientSock,
 				ip4addr_ntoa((ip4_addr_t*)&(clientAddress.sin_addr.s_addr)),
 				clientAddress.sin_port);
@@ -295,7 +295,7 @@ int command_is_available() {
 int try_to_send_command_list(carbasic_command_t* command_list, int num_commands, int maxWaitTime) {
 	static const char* TAG = "try_to_send_command_list()";
 	if(num_commands < 1 && command_list != NULL) {
-		ESP_EARLY_LOGE(TAG, "Please provide at least one command and a non NULL command_list");
+		ESP_LOGE(TAG, "Please provide at least one command and a non NULL command_list");
 		return pdFALSE;
 	}
 	size_t remaining_chars = TCP_MAX_SIZE_MESSAGE - 1;  // -1 because we need to leave room for the NULL terminator '\0'
@@ -325,7 +325,7 @@ int try_to_send_command_list(carbasic_command_t* command_list, int num_commands,
 	// Calculate the length of the generated command string
 	size_t command_string_len = string_tail - command_string;
 	if (command_string_len < 7) {
-		ESP_EARLY_LOGE(TAG, "Something went wrong! Failed to generate command string");
+		ESP_LOGE(TAG, "Something went wrong! Failed to generate command string");
 		return pdFALSE;
 	}
 
@@ -335,7 +335,7 @@ int try_to_send_command_list(carbasic_command_t* command_list, int num_commands,
 	// Copy the command string to the heap, allocating the minimum needed memory to store the string
 	char* message = malloc(command_string_len + 1);
 	if(message == NULL) {
-		ESP_EARLY_LOGE(TAG, "Failed to allocate memory for new command string!");
+		ESP_LOGE(TAG, "Failed to allocate memory for new command string!");
 		return pdFALSE;
 	}
 	strcpy(message, command_string);

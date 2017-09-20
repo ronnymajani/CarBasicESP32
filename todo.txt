@@ -1,6 +1,5 @@
 todo:
 =====
-- try ESP_LOG instead of ESP_EARLY_LOG with increased task stack size
 - add another flag the car state: uncertainty
 
 
@@ -8,12 +7,12 @@ Tasks:
 ======
 - Ultrasonic driver
 - Servo motor driver
+- Shift Register (BAR LED) driver
 
 
 
 Questions:
 ==========
-- will passing NULL to Queue functions cause a crash?
 
 
 

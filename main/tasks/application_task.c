@@ -25,7 +25,7 @@ static carbasic_state_t car_state;
 
 
 void application_task(void* p) {
-	ESP_EARLY_LOGV(TAG, "Beginning Application Task");
+	ESP_LOGI(TAG, "Beginning Application Task");
 	car_state = carbasic_new_state();
 
 	// Task Loop

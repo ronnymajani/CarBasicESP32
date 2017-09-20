@@ -28,9 +28,9 @@ static EventGroupHandle_t tcp_events;
 static const int event_accepting = (1<<0);
 static const int event_connected = (1<<1);
 
-QueueHandle_t received_messages;
-QueueHandle_t command_queue;
-QueueHandle_t outbox;
+static QueueHandle_t received_messages;
+static QueueHandle_t command_queue;
+static QueueHandle_t outbox;
 
 /* Tasks */
 void tcp_message_parser_task(void*);

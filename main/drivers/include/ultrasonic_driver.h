@@ -8,11 +8,20 @@
 #ifndef MAIN_DRIVERS_INCLUDE_ULTRASONIC_DRIVER_H_
 #define MAIN_DRIVERS_INCLUDE_ULTRASONIC_DRIVER_H_
 
-#define ULTRASONIC_DRIVER_GPIO_TRIG  //todo set the correct pin number
-#define ULTRASONIC_DRIVER_GPIO_ECHO  //todo set the correct pin number
+#define ULTRASONIC_DRIVER_GPIO_TRIG  1//todo set the correct pin number
+#define ULTRASONIC_DRIVER_GPIO_ECHO  2//todo set the correct pin number
+
+#define ULTRASONIC_DRIVER_TIMER_DIVIDER		16
+#define ULTRASONIC_DRIVER_TIMER_GROUP		TIMER_GROUP_0
+#define ULTRASONIC_DRIVER_TIMER_ID			TIMER_0
+#define ULTRASONIC_DRIVER_TIMER_GROUP_OBJ	TIMERG0
+#define ULTRASONIC_DRIVER_TIMER_OBJ			ULTRASONIC_DRIVER_TIMER_GROUP_OBJ.hw_timer[ULTRASONIC_DRIVER_TIMER_ID]
 
 /* Exported Functions */
 void init_ultrasonic_driver();
+void ultrasonic_trigger();
+int ultrasonic_measurement_ready();
+double ultrasonic_get_measurement();
 
 
 #endif /* MAIN_DRIVERS_INCLUDE_ULTRASONIC_DRIVER_H_ */

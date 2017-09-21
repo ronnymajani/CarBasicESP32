@@ -89,7 +89,7 @@ int ultrasonic_measurement_ready() {
 double ultrasonic_get_measurement() {
 	double time = (double) ultrasonic_echo_time_diff / (TIMER_BASE_CLK / ULTRASONIC_DRIVER_TIMER_OBJ.config.divider);
 	// convert value to seconds
-	ESP_LOGD(TAG, "Elapsed Time: %.8f", time);
+//	ESP_LOGD(TAG, "Elapsed Time: %.8f", time);
 	// convert time into distance
 	double distance_cm = (time*1000000.0) / 58.2;
 	xEventGroupClearBits(data_available, EVENT_DATA_AVAILABLE);
@@ -108,24 +108,28 @@ IRAM_ATTR void ultrasonic_measurement_interrupt() {
 	static uint32_t time_start_low = 0x0;
 
 	int level = gpio_get_level(ULTRASONIC_DRIVER_GPIO_ECHO);
+	ULTRASONIC_DRIVER_TIMER_OBJ.update = 1;
 
 	if(level == 1) {  // Measurement just started
 		// save timer's current value
 		time_start_high = ULTRASONIC_DRIVER_TIMER_OBJ.cnt_high;
 		time_start_low = ULTRASONIC_DRIVER_TIMER_OBJ.cnt_low;
-		ESP_EARLY_LOGD(TAG, "start: %d, %d", time_start_high, time_start_low);
 	}
 	else { // Measurement just finished
 		// stop timer
 		timer_pause(ULTRASONIC_DRIVER_TIMER_GROUP, ULTRASONIC_DRIVER_TIMER_ID);
+		/*
 		ESP_EARLY_LOGD(TAG, "Measurement Finished");
+		*/
 		// get timer's current value, calculate the difference, and store it
 		uint64_t time_start = (uint64_t)time_start_high<<32 | (uint64_t)time_start_low;
 		uint64_t time_end = (uint64_t)ULTRASONIC_DRIVER_TIMER_OBJ.cnt_high<<32 | (uint64_t)ULTRASONIC_DRIVER_TIMER_OBJ.cnt_low;
 		ultrasonic_echo_time_diff = time_end - time_start;
+		/*
 		ESP_EARLY_LOGD(TAG, "Timer Start: %"PRIu64, time_start);
 		ESP_EARLY_LOGD(TAG, "Timer End: %"PRIu64, time_end);
 		ESP_EARLY_LOGD(TAG, "Timer Diff: %"PRIu64, ultrasonic_echo_time_diff);
+		*/
 		// reset the timer's value to 0
 		timer_set_counter_value(ULTRASONIC_DRIVER_TIMER_GROUP, ULTRASONIC_DRIVER_TIMER_ID, 0x0);
 		BaseType_t xHigherPriorityTaskWoken;

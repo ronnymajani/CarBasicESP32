@@ -10,6 +10,7 @@
 #include "wifi.h"
 #include "motor_driver.h"
 #include "ultrasonic_driver.h"
+#include "servo_driver.h"
 #include "application_task.h"
 #include "tcp_service.h"
 
@@ -64,4 +65,5 @@ static void setup() {
 	wifi_init_sta();
 //	motor_driver_init();
 	ultrasonic_driver_init();
+	servo_driver_init();
 }

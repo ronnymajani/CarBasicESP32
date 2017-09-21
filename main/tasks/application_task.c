@@ -16,6 +16,8 @@
 #include "motor_driver.h"
 #include "ultrasonic_driver.h"
 
+#define REFRESH_INTERVAL_MS 50
+
 static const char* TAG = "APPLICATION_TASK";
 
 static void parse_new_command();
@@ -36,6 +38,7 @@ void application_task(void* p) {
 	for(;;) {
 		update_state();
 		broadcast_state();
+		vTaskDelay(REFRESH_INTERVAL_MS / portTICK_PERIOD_MS);
 	}
 }
 
@@ -117,8 +120,8 @@ static void broadcast_state() {
 		commands[2].value_type = FLOAT;
 		commands[2].value_float = car_state.orientation;
 	commands[3].command_type = CARBASIC_STATE_SENSOR_MEASUREMENT;
-		commands[3].value_type = FLOAT;
-		commands[3].value_float = car_state.sensor_measurement;
+		commands[3].value_type = INT;
+		commands[3].value_int = car_state.sensor_measurement;
 	commands[4].command_type = CARBASIC_STATE_SENSOR_ORIENTATION;
 		commands[4].value_type = FLOAT;
 		commands[4].value_float = car_state.sensor_orientation;
@@ -137,14 +140,20 @@ static void broadcast_state() {
 
 
 static void update_state() {
+	static int new_reading = 0;
 	// update location
 	move_car();
 	// update sensor measurement
-	ultrasonic_trigger();
-	vTaskDelay(1 / portTICK_PERIOD_MS);
+	if(new_reading == 0) {
+		ultrasonic_trigger();
+		new_reading = 1;
+		vTaskDelay(1 / portTICK_PERIOD_MS);
+	}
 	if(ultrasonic_measurement_ready()) {
 		double distance = ultrasonic_get_measurement();
-		car_state.sensor_measurement = (float)distance;
+		car_state.sensor_measurement = (int)distance;
+//		ESP_LOGI(TAG, "Measured Distance: %dcm", (int)distance);
+		new_reading = 0;
 	}
 }
 

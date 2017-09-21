@@ -12,7 +12,7 @@ typedef struct {
 	float x;
 	float y;
 	float orientation;
-	float sensor_measurement;
+	int sensor_measurement;
 	float sensor_orientation;
 	float speed;
 	int pwm_left;

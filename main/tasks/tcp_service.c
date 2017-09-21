@@ -239,7 +239,7 @@ void tcp_listener_task(void* pvParameters) {
 		}
 		struct sockaddr_in clientAddress;
 		socklen_t clientAddressLength = sizeof(clientAddress);
-		ESP_LOGV(TAG, "Accepting new connection");
+		ESP_LOGI(TAG, "Now accepting new connections");
 		int clientSock = accept(sock, (struct sockaddr*)&clientAddress, &clientAddressLength);
 
 		if(clientSock == -1) {

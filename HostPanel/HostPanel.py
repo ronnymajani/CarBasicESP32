@@ -187,7 +187,7 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
         self.speed_value.setText(str(mps) + "m/s")
 
     def set_sensor_reading(self, distance_in_meters):
-        self.sensor_reading_value.setText(str(distance_in_meters) + "m")
+        self.sensor_reading_value.setText(str(distance_in_meters) + "cm")
 
     def set_pwm(self, pwm_left, pwm_right):
         # Set indicators

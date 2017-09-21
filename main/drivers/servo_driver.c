@@ -6,6 +6,7 @@
  */
 
 #include "driver/ledc.h"
+#include "esp_log.h"
 
 #include "servo_driver.h"
 
@@ -28,6 +29,9 @@ void servo_driver_init() {
 	pwm_channel.timer_sel = SERVO_DRIVER_PWM_TIMER;
 	pwm_channel.speed_mode = SERVO_DRIVER_PWM_MODE;
 	ledc_channel_config(&pwm_channel);
+	// set servo to middle
+	ledc_set_duty(SERVO_DRIVER_PWM_MODE, SERVO_DRIVER_PWM_CHANNEL, SERVO_DRIVER_ORIENTATION_MID_PWM);
+	ledc_update_duty(SERVO_DRIVER_PWM_MODE, SERVO_DRIVER_PWM_CHANNEL);
 }
 
 

@@ -16,6 +16,7 @@
 #include "motor_driver.h"
 #include "ultrasonic_driver.h"
 #include "servo_driver.h"
+#include "../tasks/include/tcp_service.h"
 
 #define REFRESH_INTERVAL_MS 50
 
@@ -38,6 +39,7 @@ void application_task(void* p) {
 
 	// Task Loop
 	for(;;) {
+		wait_until_connected();  // if no connection is available, bloc the task
 		update_state();
 		broadcast_state();
 		vTaskDelay(REFRESH_INTERVAL_MS / portTICK_PERIOD_MS);
@@ -179,7 +181,7 @@ static void move_car() {
 
 
 static int rotate_servo() {
-	static int i = -90;
+	static int i = 0;
 	static int direction = -1;
 
 	set_servo_orientation(i);

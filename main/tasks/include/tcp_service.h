@@ -44,6 +44,10 @@
 
 /* Exported Functions */
 void init_tcp_service();
+
+int is_connected();
+void wait_until_connected();
+
 carbasic_command_t get_command();
 int command_is_available();
 

@@ -392,6 +392,21 @@ int try_to_send_command(carbasic_command_t command, int maxWaitTime) {
 	return try_to_send_command_list(&command, 1, maxWaitTime);
 }
 
+/**
+ * @returns 1 if the host is currently connected
+ * @returns 0 if no connection is available
+ */
+int is_connected() {
+	return (xEventGroupGetBits(tcp_events) & event_connected) == event_connected;
+}
+
+/**
+ * Block until a connection is established with a peer device
+ */
+void wait_until_connected() {
+	xEventGroupWaitBits(tcp_events, event_connected, 0, 1, portMAX_DELAY);
+}
+
 
 /* --------------- SUPPORT FUNCTIONS --------------- */
 void start_accepting_new_connections() {

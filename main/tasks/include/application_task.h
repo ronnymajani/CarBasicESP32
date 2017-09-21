@@ -9,7 +9,7 @@
 #define MAIN_INCLUDE_APPLICATION_TASK_H_
 
 #define TASK_APP_NAME "APP"
-#define TASK_APP_PRIORITY 1
+#define TASK_APP_PRIORITY 8
 #define TASK_APP_STACK_SIZE 4096
 
 void application_task(void*);

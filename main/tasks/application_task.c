@@ -15,6 +15,7 @@
 #include "tcp_service.h"
 #include "motor_driver.h"
 #include "ultrasonic_driver.h"
+#include "servo_driver.h"
 
 #define REFRESH_INTERVAL_MS 50
 
@@ -22,6 +23,7 @@ static const char* TAG = "APPLICATION_TASK";
 
 static void parse_new_command();
 static void broadcast_state();
+static int rotate_servo();
 static void move_car();
 static void update_state();
 static void print_a_command(carbasic_command_t);
@@ -142,7 +144,9 @@ static void broadcast_state() {
 static void update_state() {
 	static int new_reading = 0;
 	// update location
-	move_car();
+//	move_car();
+	// rotate servo
+	car_state.sensor_orientation = rotate_servo();
 	// update sensor measurement
 	if(new_reading == 0) {
 		ultrasonic_trigger();
@@ -171,6 +175,22 @@ static void move_car() {
 	i %= 150;
 	j++;
 	j %= MOTOR_DRIVER_MAX_PWM;
+}
+
+
+static int rotate_servo() {
+	static int i = -90;
+	static int direction = -1;
+
+	set_servo_orientation(i);
+
+	if (i >= 90)
+		direction = -1;
+	else if(i <= -90)
+		direction = 1;
+
+	i += (direction) * 10;
+	return i;
 }
 
 

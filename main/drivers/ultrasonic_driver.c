@@ -106,7 +106,6 @@ IRAM_ATTR void ultrasonic_measurement_interrupt() {
 	if(level == 1) {  // Measurement just started
 		ESP_EARLY_LOGD(TAG, "Measurement Started");
 		// set timer value to 0
-		timer_set_counter_value(ULTRASONIC_DRIVER_TIMER_GROUP, ULTRASONIC_DRIVER_TIMER_ID, 0x0);
 		timer_start(ULTRASONIC_DRIVER_TIMER_GROUP, ULTRASONIC_DRIVER_TIMER_ID);
 	} else { // Measurement just finished
 		ESP_EARLY_LOGD(TAG, "Measurement Finished");
@@ -114,6 +113,7 @@ IRAM_ATTR void ultrasonic_measurement_interrupt() {
 		double elapsed_time = 0.0;
 		timer_get_counter_time_sec(ULTRASONIC_DRIVER_TIMER_GROUP, ULTRASONIC_DRIVER_TIMER_ID, &elapsed_time);
 		timer_pause(ULTRASONIC_DRIVER_TIMER_GROUP, ULTRASONIC_DRIVER_TIMER_ID);
+		timer_set_counter_value(ULTRASONIC_DRIVER_TIMER_GROUP, ULTRASONIC_DRIVER_TIMER_ID, 0x0);
 		BaseType_t xHigherPriorityTaskWoken;
 		xEventGroupSetBitsFromISR(data_available, EVENT_DATA_AVAILABLE, &xHigherPriorityTaskWoken);
 		if(xHigherPriorityTaskWoken) {

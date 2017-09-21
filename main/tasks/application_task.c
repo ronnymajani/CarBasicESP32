@@ -8,7 +8,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/timer.h"
+#include "sys/time.h"
 
 #include "carbasic_protocol.h"
 #include "carbasic_state.h"
@@ -40,14 +40,15 @@ void application_task(void* p) {
 //			ESP_LOGI(TAG, "Distance: %f\n", distance);
 //		}
 //		vTaskDelay(500/portTICK_PERIOD_MS);
-		timer_start(TIMER_GROUP_0, TIMER_0);
-		double time = 0.0;
-		timer_get_counter_time_sec(TIMER_GROUP_0, TIMER_0, &time);
-		timer_pause(TIMER_GROUP_0, TIMER_0);
-		timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x0);
-		ESP_LOGI(TAG, "Elapsed Time: %.8fms", time*1000.0);
-		vTaskDelay(500/portTICK_PERIOD_MS);
+		struct timeval time_start;
+		struct timeval time_stop;
 
+		gettimeofday(&time_start, NULL);
+		gettimeofday(&time_stop, NULL);
+
+		long long int time_diff = (time_stop.tv_sec - time_start.tv_sec)*1000000 + time_stop.tv_usec - time_start.tv_usec;
+		ESP_LOGI(TAG, "Time Diff: %lldus", time_diff);
+		vTaskDelay(500/portTICK_PERIOD_MS);
 	}
 }
 

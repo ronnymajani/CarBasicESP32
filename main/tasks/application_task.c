@@ -26,28 +26,20 @@ static void print_a_command(carbasic_command_t);
 static carbasic_state_t car_state;
 
 
+
 void application_task(void* p) {
 	ESP_LOGI(TAG, "Beginning Application Task");
 	car_state = carbasic_new_state();
 
 	// Task Loop
 	for(;;) {
-//		ESP_LOGD(TAG, "Triggering...");
-//		ultrasonic_trigger();
-//		vTaskDelay(50/portTICK_PERIOD_MS);
-//		if(ultrasonic_measurement_ready()) {
-//			double distance = ultrasonic_get_measurement();
-//			ESP_LOGI(TAG, "Distance: %f\n", distance);
-//		}
-//		vTaskDelay(500/portTICK_PERIOD_MS);
-		struct timeval time_start;
-		struct timeval time_stop;
-
-		gettimeofday(&time_start, NULL);
-		gettimeofday(&time_stop, NULL);
-
-		long long int time_diff = (time_stop.tv_sec - time_start.tv_sec)*1000000 + time_stop.tv_usec - time_start.tv_usec;
-		ESP_LOGI(TAG, "Time Diff: %lldus", time_diff);
+		ESP_LOGD(TAG, "Triggering...");
+		ultrasonic_trigger();
+		vTaskDelay(50/portTICK_PERIOD_MS);
+		if(ultrasonic_measurement_ready()) {
+			double distance = ultrasonic_get_measurement();
+			ESP_LOGI(TAG, "Distance: %f\n", distance);
+		}
 		vTaskDelay(500/portTICK_PERIOD_MS);
 	}
 }

@@ -5,6 +5,7 @@
  *      Author: ronnymajani
  */
 #include <inttypes.h>
+#include "rom/ets_sys.h"
 #include "driver/gpio.h"
 #include "driver/timer.h"
 #include "soc/soc.h"
@@ -23,6 +24,7 @@
 /* Global Variables */
 static EventGroupHandle_t data_available;
 static const char* TAG = "Ultrasonic Driver";
+DRAM_ATTR static uint64_t ultrasonic_echo_time_diff;
 
 /* Function Prototypes */
 IRAM_ATTR void ultrasonic_measurement_interrupt();
@@ -63,11 +65,13 @@ void ultrasonic_driver_init() {
 
 
 void ultrasonic_trigger() {
+	// Start the timer
+	timer_start(ULTRASONIC_DRIVER_TIMER_GROUP, ULTRASONIC_DRIVER_TIMER_ID);
 	// trigger the ultrasonic sensor
 	gpio_set_level(ULTRASONIC_DRIVER_GPIO_TRIG, 0);  // set LOW for 5us
-	vTaskDelay(0.005 / portTICK_PERIOD_MS);
+	ets_delay_us(5);
 	gpio_set_level(ULTRASONIC_DRIVER_GPIO_TRIG, 1);  // set HIGH for 10us
-	vTaskDelay(0.01 / portTICK_PERIOD_MS);
+	ets_delay_us(10);
 	gpio_set_level(ULTRASONIC_DRIVER_GPIO_TRIG, 0);  // set LOW again
 }
 
@@ -83,13 +87,12 @@ int ultrasonic_measurement_ready() {
  * Please use @ref ultrasonic_measurement_ready function to check for data availability before you call this function
  */
 double ultrasonic_get_measurement() {
-	double time;
-	timer_get_counter_time_sec(ULTRASONIC_DRIVER_TIMER_GROUP, ULTRASONIC_DRIVER_TIMER_ID, &time);
+	double time = (double) ultrasonic_echo_time_diff / (TIMER_BASE_CLK / ULTRASONIC_DRIVER_TIMER_OBJ.config.divider);
 	// convert value to seconds
 	ESP_LOGD(TAG, "Elapsed Time: %.8f", time);
 	// convert time into distance
 	double distance_cm = (time*1000000.0) / 58.2;
-	xEventGroupSetBits(data_available, EVENT_DATA_AVAILABLE);
+	xEventGroupClearBits(data_available, EVENT_DATA_AVAILABLE);
 	return distance_cm;
 }
 
@@ -101,18 +104,29 @@ double ultrasonic_get_measurement() {
 /* Interrupts */
 IRAM_ATTR void ultrasonic_measurement_interrupt() {
 	static char* TAG = "(ISR)Ultrasonic";
-	ESP_EARLY_LOGD(TAG, "ENTERED ISR");
+	static uint32_t time_start_high = 0x0;
+	static uint32_t time_start_low = 0x0;
+
 	int level = gpio_get_level(ULTRASONIC_DRIVER_GPIO_ECHO);
+
 	if(level == 1) {  // Measurement just started
-		ESP_EARLY_LOGD(TAG, "Measurement Started");
-		// set timer value to 0
-		timer_start(ULTRASONIC_DRIVER_TIMER_GROUP, ULTRASONIC_DRIVER_TIMER_ID);
-	} else { // Measurement just finished
-		ESP_EARLY_LOGD(TAG, "Measurement Finished");
-		// get timer value and stop timer
-		double elapsed_time = 0.0;
-		timer_get_counter_time_sec(ULTRASONIC_DRIVER_TIMER_GROUP, ULTRASONIC_DRIVER_TIMER_ID, &elapsed_time);
+		// save timer's current value
+		time_start_high = ULTRASONIC_DRIVER_TIMER_OBJ.cnt_high;
+		time_start_low = ULTRASONIC_DRIVER_TIMER_OBJ.cnt_low;
+		ESP_EARLY_LOGD(TAG, "start: %d, %d", time_start_high, time_start_low);
+	}
+	else { // Measurement just finished
+		// stop timer
 		timer_pause(ULTRASONIC_DRIVER_TIMER_GROUP, ULTRASONIC_DRIVER_TIMER_ID);
+		ESP_EARLY_LOGD(TAG, "Measurement Finished");
+		// get timer's current value, calculate the difference, and store it
+		uint64_t time_start = (uint64_t)time_start_high<<32 | (uint64_t)time_start_low;
+		uint64_t time_end = (uint64_t)ULTRASONIC_DRIVER_TIMER_OBJ.cnt_high<<32 | (uint64_t)ULTRASONIC_DRIVER_TIMER_OBJ.cnt_low;
+		ultrasonic_echo_time_diff = time_end - time_start;
+		ESP_EARLY_LOGD(TAG, "Timer Start: %"PRIu64, time_start);
+		ESP_EARLY_LOGD(TAG, "Timer End: %"PRIu64, time_end);
+		ESP_EARLY_LOGD(TAG, "Timer Diff: %"PRIu64, ultrasonic_echo_time_diff);
+		// reset the timer's value to 0
 		timer_set_counter_value(ULTRASONIC_DRIVER_TIMER_GROUP, ULTRASONIC_DRIVER_TIMER_ID, 0x0);
 		BaseType_t xHigherPriorityTaskWoken;
 		xEventGroupSetBitsFromISR(data_available, EVENT_DATA_AVAILABLE, &xHigherPriorityTaskWoken);

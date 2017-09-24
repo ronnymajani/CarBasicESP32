@@ -20,7 +20,7 @@
 #include "motor_driver.h"
 
 #include "esp_log.h"
-static const char* TAG = "MOTOR_DRIVER";
+//static const char* TAG = "MOTOR_DRIVER";
 
 
 /**
@@ -74,7 +74,7 @@ static void set_pin_x_clear_pin_y(int motor_pin_X, int motor_pin_Y) {
  * Returns 1 if the PWM was changed, 0 if the given value is invalid
  */
 static int set_pwm(ledc_channel_t channel, int pwm) {
-	ESP_LOGD(TAG, ">> setting pwm %d", pwm);
+	// ESP_LOGD(TAG, ">> setting pwm %d", pwm);
 	if(pwm >= 0 && pwm <= MOTOR_DRIVER_MAX_PWM) {
 		ledc_set_duty(MOTOR_DRIVER_PWM_MODE, channel, pwm);
 		ledc_update_duty(MOTOR_DRIVER_PWM_MODE, channel);
@@ -86,22 +86,22 @@ static int set_pwm(ledc_channel_t channel, int pwm) {
 
 /* Right Motors */
 void set_motor_right_direction_forward() {
-	ESP_LOGD(TAG, ">> setting motor right forward");
+	// ESP_LOGD(TAG, ">> setting motor right forward");
 	set_pin_x_clear_pin_y(MOTOR_RIGHT_F_GPIO, MOTOR_RIGHT_R_GPIO);
 }
 
 void set_motor_right_direction_reverse() {
-	ESP_LOGD(TAG, ">> setting motor right reverse");
+	// ESP_LOGD(TAG, ">> setting motor right reverse");
 	set_pin_x_clear_pin_y(MOTOR_RIGHT_R_GPIO, MOTOR_RIGHT_F_GPIO);
 }
 
 int set_motor_right_pwm(int pwm) {
-	ESP_LOGD(TAG, ">> setting motor right pwm %d", pwm);
+	// ESP_LOGD(TAG, ">> setting motor right pwm %d", pwm);
 	return set_pwm(MOTOR_RIGHT_PWM_CHANNEL, pwm);
 }
 
 void disable_motor_right() {
-	ESP_LOGD(TAG, ">> disable motor right");
+	// ESP_LOGD(TAG, ">> disable motor right");
 	gpio_set_level(MOTOR_RIGHT_F_GPIO, 0);
 	gpio_set_level(MOTOR_RIGHT_R_GPIO, 0);
 }
@@ -109,22 +109,22 @@ void disable_motor_right() {
 
 /* Left Motors */
 void set_motor_left_direction_forward() {
-	ESP_LOGD(TAG, ">> setting motor left forward");
+	// ESP_LOGD(TAG, ">> setting motor left forward");
 	set_pin_x_clear_pin_y(MOTOR_LEFT_F_GPIO, MOTOR_LEFT_R_GPIO);
 }
 
 void set_motor_left_direction_reverse() {
-	ESP_LOGD(TAG, ">> setting motor left reverse");
+	// ESP_LOGD(TAG, ">> setting motor left reverse");
 	set_pin_x_clear_pin_y(MOTOR_LEFT_R_GPIO, MOTOR_LEFT_F_GPIO);
 }
 
 int set_motor_left_pwm(int pwm) {
-	ESP_LOGD(TAG, ">> setting motor left pwm %d", pwm);
+	// ESP_LOGD(TAG, ">> setting motor left pwm %d", pwm);
 	return set_pwm(MOTOR_LEFT_PWM_CHANNEL, pwm);
 }
 
 void disable_motor_left() {
-	ESP_LOGD(TAG, ">> disable motor left");
+	// ESP_LOGD(TAG, ">> disable motor left");
 	gpio_set_level(MOTOR_LEFT_F_GPIO, 0);
 	gpio_set_level(MOTOR_LEFT_R_GPIO, 0);
 }

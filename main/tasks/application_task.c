@@ -51,7 +51,7 @@ void application_task(void* p) {
 
 static void parse_new_command() {
 	carbasic_command_t command = get_command();
-	print_a_command(command);
+//	print_a_command(command);
 
 	switch(command.command_type) {
 		case CARBASIC_COMMAND_PWM_RIGHT: {

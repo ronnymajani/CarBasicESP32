@@ -20,7 +20,7 @@
 #include "motor_driver.h"
 
 #include "esp_log.h"
-//static const char* TAG = "MOTOR_DRIVER";
+static const char* TAG = "MOTOR_DRIVER";
 
 
 /**
@@ -47,12 +47,17 @@ void motor_driver_init() {
 
 	// PWM Channels config
 	ledc_channel_config_t pwm_channel;
-	pwm_channel.channel = MOTOR_RIGHT_PWM_CHANNEL;
-	pwm_channel.duty = 0;
-	pwm_channel.gpio_num = MOTOR_RIGHT_PWM_GPIO;
-	pwm_channel.intr_type = LEDC_INTR_DISABLE;
-	pwm_channel.timer_sel = MOTOR_DRIVER_PWM_TIMER;
-	pwm_channel.speed_mode = MOTOR_DRIVER_PWM_MODE;
+		pwm_channel.duty = 0;
+		pwm_channel.intr_type = LEDC_INTR_DISABLE;
+		pwm_channel.timer_sel = MOTOR_DRIVER_PWM_TIMER;
+		pwm_channel.speed_mode = MOTOR_DRIVER_PWM_MODE;
+	// Right Channel
+		pwm_channel.channel = MOTOR_RIGHT_PWM_CHANNEL;
+		pwm_channel.gpio_num = MOTOR_RIGHT_PWM_GPIO;
+	ledc_channel_config(&pwm_channel);
+	// Left Channel
+		pwm_channel.channel = MOTOR_LEFT_PWM_CHANNEL;
+		pwm_channel.gpio_num = MOTOR_LEFT_PWM_GPIO;
 	ledc_channel_config(&pwm_channel);
 }
 
@@ -74,8 +79,8 @@ static void set_pin_x_clear_pin_y(int motor_pin_X, int motor_pin_Y) {
  * Returns 1 if the PWM was changed, 0 if the given value is invalid
  */
 static int set_pwm(ledc_channel_t channel, int pwm) {
-	// ESP_LOGD(TAG, ">> setting pwm %d", pwm);
 	if(pwm >= 0 && pwm <= MOTOR_DRIVER_MAX_PWM) {
+//		ESP_LOGD(TAG, ">> setting pwm %d", pwm);
 		ledc_set_duty(MOTOR_DRIVER_PWM_MODE, channel, pwm);
 		ledc_update_duty(MOTOR_DRIVER_PWM_MODE, channel);
 		return 1;
@@ -96,7 +101,7 @@ void set_motor_right_direction_reverse() {
 }
 
 int set_motor_right_pwm(int pwm) {
-	// ESP_LOGD(TAG, ">> setting motor right pwm %d", pwm);
+//	 ESP_LOGD(TAG, ">> setting motor right pwm %d", pwm);
 	return set_pwm(MOTOR_RIGHT_PWM_CHANNEL, pwm);
 }
 
@@ -119,7 +124,7 @@ void set_motor_left_direction_reverse() {
 }
 
 int set_motor_left_pwm(int pwm) {
-	// ESP_LOGD(TAG, ">> setting motor left pwm %d", pwm);
+//	 ESP_LOGD(TAG, ">> setting motor left pwm %d", pwm);
 	return set_pwm(MOTOR_LEFT_PWM_CHANNEL, pwm);
 }
 

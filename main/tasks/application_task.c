@@ -51,6 +51,7 @@ void application_task(void* p) {
 
 static void parse_new_command() {
 	carbasic_command_t command = get_command();
+	print_a_command(command);
 
 	switch(command.command_type) {
 		case CARBASIC_COMMAND_PWM_RIGHT: {
@@ -75,29 +76,21 @@ static void parse_new_command() {
 				set_motor_left_pwm((int)pwm);
 			}
 		}	break;
-		case CARBASIC_COMMAND_MOTOR_RIGHT_ENABLE: {
-			if(command.value_int == CARBASIC_COMMAND_VALUE_ENABLE)
-				enable_motor_right();
-			else
-				disable_motor_right();
-		}	break;
-		case CARBASIC_COMMAND_MOTOR_LEFT_ENABLE: {
-			if(command.value_int == CARBASIC_COMMAND_VALUE_ENABLE)
-				enable_motor_left();
-			else
-				disable_motor_left();
-		}	break;
 		case CARBASIC_COMMAND_DIRECTION_RIGHT_FORWARD: {
 			if(command.value_int == CARBASIC_COMMAND_VALUE_DIRECTION_FORWARD)
 				set_motor_right_direction_forward();
-			else
+			else if(command.value_int == CARBASIC_COMMAND_VALUE_DIRECTION_REVERSE)
 				set_motor_right_direction_reverse();
+			else
+				disable_motor_right();
 		}	break;
 		case CARBASIC_COMMAND_DIRECTION_LEFT_FORWARD: {
 			if(command.value_int == CARBASIC_COMMAND_VALUE_DIRECTION_FORWARD)
 				set_motor_left_direction_forward();
-			else
+			else if(command.value_int == CARBASIC_COMMAND_VALUE_DIRECTION_REVERSE)
 				set_motor_left_direction_reverse();
+			else
+				disable_motor_left();
 		}	break;
 		case CARBASIC_COMMAND_SENSOR_ORIENTATION:
 			break;

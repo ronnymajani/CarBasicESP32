@@ -21,16 +21,13 @@ class CarBasicProtocol(object):
 
     TCP_TAG_COMMAND_PWM_LEFT = "l"
     TCP_TAG_COMMAND_PWM_RIGHT = "r"
-    TCP_TAG_COMMAND_MOTOR_RIGHT_ENABLE = "m"  # used to enable/disable right motor
-    TCP_TAG_COMMAND_MOTOR_LEFT_ENABLE = "n"  # used to enable/disable left motor
     TCP_TAG_COMMAND_DIRECTION_RIGHT_FORWARD = "e"  # used to set the direction of the right motor
     TCP_TAG_COMMAND_DIRECTION_LEFT_FORWARD = "w"  # used to set the direction of the left motor
     TCP_TAG_COMMAND_SENSOR_ORIENTATION = "s"  # used to set the sensor orientation
 
+    TCP_COMMAND_VALUE_DIRECTION_NONE = 2
     TCP_COMMAND_VALUE_DIRECTION_FORWARD = 1
     TCP_COMMAND_VALUE_DIRECTION_REVERSE = 0
-    TCP_COMMAND_VALUE_ENABLE = 1
-    TCP_COMMAND_VALUE_DISABLE = 0
 
     @staticmethod
     def generate_command_string(command):
@@ -41,22 +38,6 @@ class CarBasicProtocol(object):
         return {
             CarBasicProtocol.TCP_TAG_COMMAND_PWM_RIGHT: pwm_right,
             CarBasicProtocol.TCP_TAG_COMMAND_PWM_LEFT: pwm_left
-        }
-
-    @staticmethod
-    def command_enable_motors(enable_right, enable_left):
-        """Command to enable/disable the motors
-        :param enable_right Enables the right motors if True; Disables them if False
-        :param enable_left Enables the left motors if True; Disables them if False
-        """
-        right = CarBasicProtocol.TCP_COMMAND_VALUE_ENABLE if enable_right \
-            else CarBasicProtocol.TCP_COMMAND_VALUE_DISABLE
-        left = CarBasicProtocol.TCP_COMMAND_VALUE_ENABLE if enable_left \
-            else CarBasicProtocol.TCP_COMMAND_VALUE_DISABLE
-
-        return {
-            CarBasicProtocol.TCP_TAG_COMMAND_MOTOR_RIGHT_ENABLE: right,
-            CarBasicProtocol.TCP_TAG_COMMAND_MOTOR_LEFT_ENABLE: left
         }
 
     @staticmethod
@@ -81,3 +62,14 @@ class CarBasicProtocol(object):
         return {
             CarBasicProtocol.TCP_TAG_COMMAND_SENSOR_ORIENTATION: orientation
         }
+
+    @staticmethod
+    def command_disable_motors(disable_right=True, disable_left=True):
+        command = {}
+        if disable_right:
+            command[CarBasicProtocol.TCP_TAG_COMMAND_DIRECTION_RIGHT_FORWARD] \
+                = CarBasicProtocol.TCP_COMMAND_VALUE_DIRECTION_NONE
+        if disable_left:
+            command[CarBasicProtocol.TCP_TAG_COMMAND_DIRECTION_LEFT_FORWARD] \
+                = CarBasicProtocol.TCP_COMMAND_VALUE_DIRECTION_NONE
+        return command

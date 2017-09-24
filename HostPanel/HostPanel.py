@@ -81,7 +81,6 @@ class HostPanelApp(QtGui.QMainWindow, UI_MainWindow):
             self.logger.debug("Starting motors")
             button.setText("STOP")
             self.controls_pwm_value_changed()
-            self.car.controller.set_direction_forward()
             self.car.controller.start_car()
         elif button.text() == "STOP":
             self.logger.debug("Stopping motors")

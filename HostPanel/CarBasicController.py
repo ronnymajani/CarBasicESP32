@@ -75,7 +75,6 @@ class CarBasicController:
         if self.is_connected():
             command = CarBasicProtocol.command_set_pwm(pwm_right, pwm_left)
             command.update(CarBasicProtocol.command_set_motor_directions(dir_right, dir_left))
-            command.update(CarBasicProtocol.command_enable_motors(True, True))
             self.networkManager.send_message(CarBasicProtocol.generate_command_string(command))
 
     def move_car_forward(self, pwm):
@@ -112,13 +111,13 @@ class CarBasicController:
 
     def stop_car(self):
         if self.is_connected():
-            command = CarBasicProtocol.command_enable_motors(False, False)
-            self.networkManager.send_message(CarBasicProtocol.generate_command_string(command))
+            self.networkManager.send_message(CarBasicProtocol.generate_command_string(
+                CarBasicProtocol.command_disable_motors()
+            ))
 
     def start_car(self):
         if self.is_connected():
-            command = CarBasicProtocol.command_enable_motors(True, True)
-            self.networkManager.send_message(CarBasicProtocol.generate_command_string(command))
+            self.set_direction_forward()
 
     def set_direction_forward(self):
         if self.is_connected():

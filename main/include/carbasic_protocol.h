@@ -28,12 +28,11 @@ typedef struct {
 
 #define CARBASIC_COMMAND_PWM_LEFT  'l'
 #define CARBASIC_COMMAND_PWM_RIGHT  'r'
-#define CARBASIC_COMMAND_MOTOR_RIGHT_ENABLE  'm'  // used to enable/disable right motor
-#define CARBASIC_COMMAND_MOTOR_LEFT_ENABLE  'n'  // used to enable/disable left motor
 #define CARBASIC_COMMAND_DIRECTION_RIGHT_FORWARD  'e'  // used to set the direction of the right motor
 #define CARBASIC_COMMAND_DIRECTION_LEFT_FORWARD  'w'  // used to set the direction of the left motor
 #define CARBASIC_COMMAND_SENSOR_ORIENTATION  's'  // used to set the sensor orientation
 
+#define CARBASIC_COMMAND_VALUE_DIRECTION_NONE	2
 #define CARBASIC_COMMAND_VALUE_DIRECTION_FORWARD  1
 #define CARBASIC_COMMAND_VALUE_DIRECTION_REVERSE  0
 #define CARBASIC_COMMAND_VALUE_ENABLE  1

@@ -12,6 +12,7 @@
 #include "ultrasonic_driver.h"
 #include "servo_driver.h"
 #include "application_task.h"
+#include "host_interface_task.h"
 #include "tcp_service.h"
 
 
@@ -46,6 +47,7 @@ static void setLogLevels() {
 static void createTasks() {
 	BaseType_t retCode;
 
+	init_tcp_service();
 	/* Application Task */
 	ESP_LOGV(TAG, "Creating Application Task");
 	retCode = (xTaskCreate(&application_task, TASK_APP_NAME, TASK_APP_STACK_SIZE, NULL, TASK_APP_PRIORITY, NULL));
@@ -55,7 +57,14 @@ static void createTasks() {
 		for(;;);
 	}
 
-	init_tcp_service();
+	/* Host Interface Task */
+	ESP_LOGV(TAG, "Creating Host Interface Task");
+	retCode = (xTaskCreate(&host_interface_task, TASK_HOST_INTERFACE_NAME, TASK_HOST_INTERFACE_STACK_SIZE, NULL, TASK_HOST_INTERFACE_PRIORITY, NULL));
+
+	if(retCode != pdPASS) {
+		ESP_LOGE(TAG, "Failed to create Host Interface Task");
+		for(;;);
+	}
 }
 
 

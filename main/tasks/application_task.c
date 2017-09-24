@@ -40,6 +40,7 @@ void application_task(void* p) {
 	// Task Loop
 	for(;;) {
 		wait_until_connected();  // if no connection is available, bloc the task
+		parse_new_command();
 		update_state();
 		broadcast_state();
 		vTaskDelay(REFRESH_INTERVAL_MS / portTICK_PERIOD_MS);

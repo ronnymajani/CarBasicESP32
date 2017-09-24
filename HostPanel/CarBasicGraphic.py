@@ -9,7 +9,7 @@ class CarBasicGraphic:
     All the variables in this class are stored in pixels
     Conversion takes place automatically using the given scale factor
     """
-    def __init__(self, car, scale=1.0, width=10, length=20, color=(150, 150, 150), line_color=(0, 0, 0), history=False):
+    def __init__(self, car, scale=1.0, width=10, length=20, color=(150, 150, 150), line_color=(0, 0, 0), history=True):
         """
         :param car: The CarBasic object to attach this class to
         :param scale: The pixel to meter ratio (how many pixels represent a meter)

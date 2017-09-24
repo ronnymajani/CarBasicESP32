@@ -4,6 +4,8 @@ from CarBasicProtocol import CarBasicProtocol
 
 
 class CarBasicController:
+    STATIC_PWM_SCALEDOWN_FACTOR = 0.8
+
     def __init__(self, car):
         self.car = car
         self.networkManager = None
@@ -83,11 +85,11 @@ class CarBasicController:
 
     def move_car_forward_right(self, pwm):
         """Tells the car to move forward while turning to the right"""
-        self.move(pwm/2.0, pwm, True, True)
+        self.move(pwm * CarBasicController.STATIC_PWM_SCALEDOWN_FACTOR, pwm, True, True)
 
     def move_car_forward_left(self, pwm):
         """Tells the car to move forward while turning to the left"""
-        self.move(pwm, pwm/2.0, True, True)
+        self.move(pwm, pwm * CarBasicController.STATIC_PWM_SCALEDOWN_FACTOR, True, True)
 
     def rotate_car_clockwise(self, pwm):
         """Tells the car to rotate in place clockwise (right motor reverse, left motor forward)"""
@@ -103,11 +105,11 @@ class CarBasicController:
 
     def move_car_reverse_right(self, pwm):
         """Tells the car to move in reverse while turning to the right (right motor moves slower then left)"""
-        self.move(pwm/2.0, pwm, False, False)
+        self.move(pwm * CarBasicController.STATIC_PWM_SCALEDOWN_FACTOR, pwm, False, False)
 
     def move_car_reverse_left(self, pwm):
         """Tells the car to move in reverse while turning to the left (right motor moves faster then left)"""
-        self.move(pwm, pwm/2.0, False, False)
+        self.move(pwm, pwm * CarBasicController.STATIC_PWM_SCALEDOWN_FACTOR, False, False)
 
     def stop_car(self):
         if self.is_connected():

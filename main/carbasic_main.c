@@ -63,7 +63,7 @@ static void createTasks() {
 static void setup() {
 	ESP_LOGV(TAG, "Starting Setup Function");
 	wifi_init_sta();
-//	motor_driver_init();
+	motor_driver_init();
 	ultrasonic_driver_init();
 	servo_driver_init();
 }
